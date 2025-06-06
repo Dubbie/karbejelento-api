@@ -107,4 +107,12 @@ export class UsersService {
       throw new NotFoundException(`User with UUID ${uuid} not found`);
     }
   }
+
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email })
+      .addSelect('user.password_hash') // Explicitly select the hidden password field
+      .getOne();
+  }
 }
