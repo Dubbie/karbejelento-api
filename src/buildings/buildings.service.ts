@@ -90,4 +90,12 @@ export class BuildingsService {
       throw new NotFoundException(`Building with UUID ${uuid} not found`);
     }
   }
+
+  async findOneById(id: number): Promise<Building> {
+    const building = await this.buildingRepository.findOneBy({ id });
+    if (!building) {
+      throw new NotFoundException(`Building with ID ${id} not found`);
+    }
+    return building;
+  }
 }

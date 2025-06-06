@@ -9,5 +9,6 @@ import { BuildingManagement } from './entities/building-management.entity';
   imports: [TypeOrmModule.forFeature([Building, BuildingManagement])],
   controllers: [BuildingsController],
   providers: [BuildingsService],
+  exports: [BuildingsService],
 })
 export class BuildingsModule {}
