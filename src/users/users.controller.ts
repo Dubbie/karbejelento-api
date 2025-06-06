@@ -8,11 +8,13 @@ import {
   Delete,
   ParseUUIDPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 
 @UseGuards(AuthGuard('jwt')) // This uses our JwtStrategy
 @Controller('users')
@@ -22,6 +24,11 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get('profile')
+  getProfile(@Req() req: Request) {
+    return req.user;
   }
 
   @Get()
