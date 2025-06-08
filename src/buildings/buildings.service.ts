@@ -38,10 +38,10 @@ export class BuildingsService {
 
       // 2. Create the initial management record
       const newManagement = this.managementRepository.create({
-        building_id: savedBuilding.id,
-        customer_id: customer_id,
-        start_date: new Date(), // Starts now
-        end_date: null, // No end date means it's the current management
+        building: savedBuilding,
+        customer: { id: customer_id },
+        start_date: new Date(),
+        end_date: null,
       });
       await queryRunner.manager.save(newManagement);
 
@@ -58,11 +58,25 @@ export class BuildingsService {
   }
 
   findAll(): Promise<Building[]> {
-    return this.buildingRepository.find();
+    return this.buildingRepository.find({
+      relations: {
+        management_history: {
+          customer: true,
+        },
+      },
+    });
   }
 
   async findOneByUuid(uuid: string): Promise<Building> {
-    const building = await this.buildingRepository.findOneBy({ uuid });
+    const building = await this.buildingRepository.findOne({
+      where: { uuid },
+      relations: {
+        management_history: {
+          customer: true,
+        },
+      },
+    });
+
     if (!building) {
       throw new NotFoundException(`Building with UUID ${uuid} not found`);
     }

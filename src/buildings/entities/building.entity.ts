@@ -6,8 +6,21 @@ import {
   UpdateDateColumn,
   Unique,
   OneToMany,
+  AfterLoad,
 } from 'typeorm';
 import { BuildingManagement } from './building-management.entity';
+import { User } from 'src/users/entities/user.entity';
+
+export enum StreetType {
+  AVENUE = 'avenue',
+  BOULEVARD = 'boulevard',
+  CIRCLE = 'circle',
+  PLACE = 'place',
+  ROAD = 'road',
+  SQUARE = 'square',
+  STREET = 'street',
+  TERRACE = 'terrace',
+}
 
 @Entity('buildings')
 @Unique(['uuid'])
@@ -31,7 +44,7 @@ export class Building {
   @Column()
   street_name: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'enum', enum: StreetType, nullable: true })
   street_type: string;
 
   @Column()
@@ -53,9 +66,25 @@ export class Building {
   @OneToMany(() => BuildingManagement, (management) => management.building)
   management_history: BuildingManagement[];
 
+  current_customer: User | null;
+
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @AfterLoad()
+  loadCurrentCustomer(): void {
+    if (this.management_history && this.management_history.length > 0) {
+      const currentManagement = this.management_history.find(
+        (m) => m.end_date === null,
+      );
+      this.current_customer = currentManagement
+        ? currentManagement.customer
+        : null;
+    } else {
+      this.current_customer = null;
+    }
+  }
 }

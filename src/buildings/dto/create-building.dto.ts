@@ -1,4 +1,5 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { StreetType } from '../entities/building.entity';
 
 export class CreateBuildingDto {
   @IsString()
@@ -20,6 +21,10 @@ export class CreateBuildingDto {
   @IsString()
   @IsNotEmpty()
   street_number: string;
+
+  @IsEnum(StreetType)
+  @IsNotEmpty()
+  street_type: string;
 
   @IsString()
   @IsNotEmpty()

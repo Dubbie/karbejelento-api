@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  JoinColumn, // Import JoinColumn
 } from 'typeorm';
 import { Building } from './building.entity';
 
@@ -12,12 +13,6 @@ import { Building } from './building.entity';
 export class BuildingManagement {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column()
-  building_id: number;
-
-  @Column()
-  customer_id: number;
 
   @Column({ type: 'date' })
   start_date: Date;
@@ -28,11 +23,11 @@ export class BuildingManagement {
   @CreateDateColumn()
   created_at: Date;
 
-  // Many management records belong to one Building
   @ManyToOne(() => Building, (building) => building.management_history)
+  @JoinColumn({ name: 'building_id' })
   building: Building;
 
-  // Many management records belong to one Customer (User)
-  @ManyToOne(() => User) // We don't need a reverse relation on User for this
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'customer_id' })
   customer: User;
 }
