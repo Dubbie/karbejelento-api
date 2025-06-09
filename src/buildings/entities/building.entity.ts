@@ -68,6 +68,8 @@ export class Building {
 
   current_customer: User | null;
 
+  formatted_address: string;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -86,5 +88,10 @@ export class Building {
     } else {
       this.current_customer = null;
     }
+  }
+
+  @AfterLoad()
+  loadFormattedAddress(): void {
+    this.formatted_address = `${this.postcode} ${this.city}, ${this.street_name} ${this.street_type} ${this.street_number}`;
   }
 }

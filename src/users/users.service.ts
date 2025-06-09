@@ -43,7 +43,7 @@ export class UsersService {
       name,
       email,
       role,
-      manager_id,
+      manager: { id: manager_id },
       password_hash: hashedPassword,
       uuid: uuidv4(),
     });

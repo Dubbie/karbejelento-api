@@ -8,6 +8,7 @@ import {
   Unique,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
 export enum UserRole {
@@ -45,12 +46,9 @@ export class User {
   @Column({ default: true })
   is_active: boolean;
 
-  // This sets up the self-referencing relationship for managers and customers
   @ManyToOne(() => User, (user) => user.customers, { nullable: true })
+  @JoinColumn({ name: 'manager_id' })
   manager: User;
-
-  @Column({ nullable: true })
-  manager_id: number;
 
   @OneToMany(() => User, (user) => user.manager)
   customers: User[]; // A manager can have many customers

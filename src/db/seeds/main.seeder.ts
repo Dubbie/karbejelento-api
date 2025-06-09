@@ -38,7 +38,7 @@ export default class MainSeeder implements Seeder {
       email: 'customer@example.com',
       role: UserRole.CUSTOMER,
       password_hash: hashedPassword,
-      manager_id: manager.id,
+      manager: manager,
     });
 
     console.log('Users seeded successfully!');

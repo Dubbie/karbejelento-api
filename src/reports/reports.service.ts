@@ -72,15 +72,32 @@ export class ReportsService {
   }
 
   findAll(): Promise<Report[]> {
-    return this.reportRepository.find({ relations: { building: true } });
+    return this.reportRepository.find({
+      relations: { building: true, created_by: true },
+    });
   }
 
   async findOneByUuid(uuid: string): Promise<Report> {
-    const report = await this.reportRepository.findOneBy({ uuid });
+    const report = await this.reportRepository.find({
+      where: { uuid },
+      relations: {
+        building: {
+          management_history: {
+            customer: {
+              manager: true,
+            },
+          },
+        },
+        created_by: true,
+        notifier: true,
+      },
+    });
+
     if (!report) {
       throw new NotFoundException(`Report with UUID ${uuid} not found`);
     }
-    return report;
+
+    return report[0];
   }
 
   async update(
