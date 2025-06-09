@@ -38,6 +38,11 @@ export class BuildingsController {
     return this.buildingsService.findOneByUuid(uuid);
   }
 
+  @Get(':id/notifiers')
+  findNotifiersForBuilding(@Param('id') id: number) {
+    return this.buildingsService.findNotifiersForBuilding(id);
+  }
+
   @Patch(':uuid')
   @Roles(UserRole.ADMIN, UserRole.DAMAGE_SOLVER, UserRole.MANAGER)
   update(

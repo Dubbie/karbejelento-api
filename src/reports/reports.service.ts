@@ -1,5 +1,3 @@
-// src/reports/reports.service.ts
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BuildingsService } from 'src/buildings/buildings.service';
@@ -10,6 +8,10 @@ import { Report, ReportStatus } from './entities/report.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ReportStatusHistory } from './entities/report-status-history.entity';
 import { UpdateReportDto } from './dto/update-report.dto';
+import {
+  AttachmentCategory,
+  ReportAttachment,
+} from './entities/report-attachment.entity';
 
 @Injectable()
 export class ReportsService {
@@ -18,6 +20,8 @@ export class ReportsService {
     private readonly reportRepository: Repository<Report>,
     @InjectRepository(ReportStatusHistory)
     private readonly statusHistoryRepository: Repository<ReportStatusHistory>,
+    @InjectRepository(ReportAttachment)
+    private readonly attachmentRepository: Repository<ReportAttachment>,
     private readonly buildingService: BuildingsService,
     private readonly dataSource: DataSource,
   ) {}
@@ -29,7 +33,7 @@ export class ReportsService {
     const { building_id, ...reportData } = createReportDto;
 
     // 1. Find the associated building to snapshot its data
-    const building = await this.buildingService.findOneById(building_id); // We need to add this method
+    const building = await this.buildingService.findOneById(building_id);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -40,9 +44,9 @@ export class ReportsService {
       const newReport = this.reportRepository.create({
         ...reportData,
         uuid: uuidv4(),
-        building_id: building.id,
-        created_by_user_id: user.id,
-        // Snapshot the data from the building
+        building: building,
+        notifier: { id: reportData.notifier_id },
+        created_by: user,
         bond_number: building.bond_number,
         insurer: building.insurer,
       });
@@ -66,10 +70,6 @@ export class ReportsService {
       await queryRunner.release();
     }
   }
-
-  // NOTE: For a real app, findAll, findOne, update, and remove would
-  // require complex authorization logic based on the user's role and
-  // their relationship to the building/customer. We will keep it simple here.
 
   findAll(): Promise<Report[]> {
     return this.reportRepository.find({ relations: { building: true } });
@@ -95,5 +95,32 @@ export class ReportsService {
       throw new NotFoundException(`Report with UUID ${uuid} not found`);
     }
     return this.reportRepository.save(report);
+  }
+
+  async addAttachments(
+    reportUuid: string,
+    files: Array<Express.Multer.File>,
+    categories: AttachmentCategory[],
+    user: Omit<User, 'password_hash'>,
+  ): Promise<ReportAttachment[]> {
+    // 1. Find the report the attachments belong to
+    const report = await this.findOneByUuid(reportUuid);
+
+    // 2. Create an array of ReportAttachment entities from the uploaded file data
+    const attachments = files.map((file, index) => {
+      return this.attachmentRepository.create({
+        uuid: uuidv4(),
+        report_id: report.id,
+        uploaded_by_user_id: user.id,
+        file_path: file.path,
+        file_name_original: file.originalname,
+        file_mime_type: file.mimetype,
+        file_size_bytes: file.size,
+        category: categories[index] || 'other',
+      });
+    });
+
+    // 3. Save all the new attachment records to the database
+    return this.attachmentRepository.save(attachments);
   }
 }

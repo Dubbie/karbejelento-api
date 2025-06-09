@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -13,11 +14,8 @@ export class Notifier {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // The customer (company) this notifier belongs to
-  @Column()
-  customer_id: number;
-
   @ManyToOne(() => User)
+  @JoinColumn({ name: 'customer_id' })
   customer: User;
 
   @Column()

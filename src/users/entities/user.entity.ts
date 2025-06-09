@@ -1,3 +1,4 @@
+import { Notifier } from 'src/notifiers/entities/notifier.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -53,6 +54,9 @@ export class User {
 
   @OneToMany(() => User, (user) => user.manager)
   customers: User[]; // A manager can have many customers
+
+  @OneToMany(() => Notifier, (notifier) => notifier.customer)
+  notifiers: Notifier[]; // A customer can have many notifiers
 
   @CreateDateColumn()
   created_at: Date;

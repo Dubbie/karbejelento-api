@@ -6,6 +6,8 @@ import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { BuildingManagement } from './entities/building-management.entity';
+import { UsersService } from 'src/users/users.service';
+import { Notifier } from 'src/notifiers/entities/notifier.entity';
 
 @Injectable()
 export class BuildingsService {
@@ -14,7 +16,8 @@ export class BuildingsService {
     private readonly buildingRepository: Repository<Building>,
     @InjectRepository(BuildingManagement)
     private readonly managementRepository: Repository<BuildingManagement>,
-    private readonly dataSource: DataSource, // Inject DataSource for transactions
+    private readonly usersService: UsersService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -111,5 +114,42 @@ export class BuildingsService {
       throw new NotFoundException(`Building with ID ${id} not found`);
     }
     return building;
+  }
+
+  /**
+   * Finds all available notifiers for a building based on its current customer.
+   * @param buildingId The ID of the building
+   * @returns An array of Notifier entities.
+   */
+  async findNotifiersForBuilding(buildingId: number): Promise<Notifier[]> {
+    // 1. Find the building and its current customer
+    // We don't need the full management history here, so we can optimize the query
+    const building = await this.buildingRepository.findOne({
+      where: { id: buildingId },
+      relations: {
+        management_history: {
+          customer: true, // We only need the customer from the history
+        },
+      },
+    });
+
+    if (!building) {
+      throw new NotFoundException(`Building with ID ${buildingId} not found`);
+    }
+
+    // 2. The @AfterLoad hook has already populated `current_customer` for us
+    const currentCustomer = building.current_customer;
+
+    if (!currentCustomer) {
+      // If there is no current customer, there are no notifiers
+      return [];
+    }
+
+    // 3. Use the UsersService to get that customer's notifiers
+    const customerWithNotifiers =
+      await this.usersService.findNotifiersForCustomer(currentCustomer.id);
+
+    // 4. Return just the array of notifiers
+    return customerWithNotifiers.notifiers;
   }
 }

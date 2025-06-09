@@ -115,4 +115,24 @@ export class UsersService {
       .addSelect('user.password_hash') // Explicitly select the hidden password field
       .getOne();
   }
+
+  /**
+   * Finds a single user (customer) by their ID and eagerly loads their notifiers.
+   * @param customerId The ID of the customer.
+   * @returns The User entity with the notifiers array populated.
+   */
+  async findNotifiersForCustomer(customerId: number): Promise<User> {
+    const customer = await this.userRepository.findOne({
+      where: { id: customerId },
+      relations: {
+        notifiers: true, // Eagerly load the notifiers relationship
+      },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    return customer;
+  }
 }
