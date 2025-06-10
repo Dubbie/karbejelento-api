@@ -12,6 +12,7 @@ import {
   AttachmentCategory,
   ReportAttachment,
 } from './entities/report-attachment.entity';
+import { QueryScopeService } from 'src/common/services/query-scope.service';
 
 @Injectable()
 export class ReportsService {
@@ -24,6 +25,7 @@ export class ReportsService {
     private readonly attachmentRepository: Repository<ReportAttachment>,
     private readonly buildingService: BuildingsService,
     private readonly dataSource: DataSource,
+    private readonly queryScopeService: QueryScopeService,
   ) {}
 
   async create(
@@ -71,10 +73,18 @@ export class ReportsService {
     }
   }
 
-  findAll(): Promise<Report[]> {
-    return this.reportRepository.find({
-      relations: { building: true, created_by: true },
-    });
+  findAll(user: User): Promise<Report[]> {
+    // return this.reportRepository.find({
+    //   relations: { building: true, created_by: true },
+    // });
+
+    const qb = this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.building', 'building');
+
+    this.queryScopeService.applyBuildingScope(qb, user, 'building');
+
+    return qb.getMany();
   }
 
   async findOneByUuid(uuid: string): Promise<Report> {

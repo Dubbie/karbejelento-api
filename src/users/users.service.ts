@@ -68,6 +68,9 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: { uuid },
       relations: { manager: true, customers: true },
+      select: {
+        password_hash: false,
+      },
     });
     if (!user) {
       throw new NotFoundException(`User with UUID ${uuid} not found`);

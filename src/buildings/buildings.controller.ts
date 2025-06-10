@@ -15,7 +15,8 @@ import { UpdateBuildingDto } from './dto/update-building.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UserRole } from 'src/users/entities/user.entity';
+import { User, UserRole } from 'src/users/entities/user.entity';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @Controller('buildings')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -29,8 +30,8 @@ export class BuildingsController {
   }
 
   @Get()
-  findAll() {
-    return this.buildingsService.findAll();
+  findAll(@CurrentUser() user: User) {
+    return this.buildingsService.findAll(user);
   }
 
   @Get(':uuid')

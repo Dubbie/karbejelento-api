@@ -10,6 +10,7 @@ import { NotifiersModule } from './notifiers/notifiers.module';
 import { ReportsModule } from './reports/reports.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { join } from 'path';
       }),
     }),
 
+    CommonModule,
     UsersModule,
     AuthModule,
     BuildingsModule,

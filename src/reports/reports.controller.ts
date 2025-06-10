@@ -20,11 +20,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Request } from 'express';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UserRole } from 'src/users/entities/user.entity';
+import { User, UserRole } from 'src/users/entities/user.entity';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AttachmentCategory } from './entities/report-attachment.entity';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 // Helper function for naming files to avoid collisions.
 const editFileName = (
@@ -64,8 +65,8 @@ export class ReportsController {
   }
 
   @Get()
-  findAll() {
-    return this.reportsService.findAll();
+  findAll(@CurrentUser() user: User) {
+    return this.reportsService.findAll(user);
   }
 
   @Get(':uuid')
