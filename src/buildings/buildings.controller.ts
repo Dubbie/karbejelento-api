@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { BuildingsService } from './buildings.service';
 import { CreateBuildingDto } from './dto/create-building.dto';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { User, UserRole } from 'src/users/entities/user.entity';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @Controller('buildings')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -30,8 +32,8 @@ export class BuildingsController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: User) {
-    return this.buildingsService.findAll(user);
+  findAll(@CurrentUser() user: User, @Query() queryDto: QueryDto) {
+    return this.buildingsService.findAll(user, queryDto);
   }
 
   @Get(':uuid')

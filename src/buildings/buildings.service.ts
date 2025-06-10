@@ -10,6 +10,9 @@ import { UsersService } from 'src/users/users.service';
 import { Notifier } from 'src/notifiers/entities/notifier.entity';
 import { User } from 'src/users/entities/user.entity';
 import { QueryScopeService } from 'src/common/services/query-scope.service';
+import { QueryDto } from 'src/common/dto/query.dto';
+import { PaginationService } from 'src/common/services/pagination.service';
+import { PaginationResult } from 'src/common/interfaces/pagination-result.interface';
 
 @Injectable()
 export class BuildingsService {
@@ -21,6 +24,7 @@ export class BuildingsService {
     private readonly usersService: UsersService,
     private readonly dataSource: DataSource,
     private readonly queryScopeService: QueryScopeService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   /**
@@ -63,46 +67,7 @@ export class BuildingsService {
     }
   }
 
-  findAll(user: User): Promise<Building[]> {
-    // const queryBuilder = this.buildingRepository.createQueryBuilder('building');
-
-    // // The @AfterLoad hook for 'current_customer' needs this relation to be loaded.
-    // // We add it for all roles to keep the output object consistent.
-    // queryBuilder
-    //   .leftJoinAndSelect('building.management_history', 'management_history')
-    //   .leftJoinAndSelect('management_history.customer', 'customer');
-
-    // switch (user.role) {
-    //   case UserRole.ADMIN:
-    //   case UserRole.DAMAGE_SOLVER:
-    //     // Admins and Damage Solvers can see all buildings. No additional filters needed.
-    //     break;
-
-    //   case UserRole.MANAGER:
-    //     // A Manager sees buildings managed by their customers.
-    //     // We need to find buildings where the building's customer has a manager_id matching the current user's id.
-    //     queryBuilder
-    //       .where('customer.manager_id = :managerId', { managerId: user.id })
-    //       .andWhere('management_history.end_date IS NULL');
-    //     break;
-
-    //   case UserRole.CUSTOMER:
-    //     // A Customer sees only the buildings they are directly assigned to.
-    //     queryBuilder
-    //       .where('customer.id = :customerId', { customerId: user.id })
-    //       .andWhere('management_history.end_date IS NULL');
-    //     break;
-
-    //   default:
-    //     // If a role is not explicitly handled, deny access.
-    //     throw new ForbiddenException(
-    //       'You do not have permission to access this resource.',
-    //     );
-    // }
-
-    // // Execute the query and return the results
-    // return queryBuilder.getMany();
-
+  findAll(user: User, queryDto: QueryDto): Promise<PaginationResult<Building>> {
     const qb = this.buildingRepository
       .createQueryBuilder('building')
       .leftJoinAndSelect('building.management_history', 'management_history')
@@ -110,7 +75,10 @@ export class BuildingsService {
 
     this.queryScopeService.applyBuildingScope(qb, user, 'building');
 
-    return qb.getMany();
+    return this.paginationService.paginate(qb, queryDto, 'building', {
+      sortableFields: ['name'],
+      filterableFields: ['name'],
+    });
   }
 
   async findOneByUuid(uuid: string): Promise<Building> {
