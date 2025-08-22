@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('customer');
             $table->boolean('is_active')->default(true);
+            $table->foreignId('manager_id')->nullable()->constrained('users')->nullOnDelete();
             $table->rememberToken();
             $table->timestamps();
         });
