@@ -32,8 +32,8 @@ class StoreReportRequest extends FormRequest
 
         return [
             // Core relationships
-            'building_id' => ['required', 'integer', 'exists:buildings,id'],
-            'notifier_id' => ['required', 'integer', 'exists:notifiers,id'],
+            'building_uuid' => ['required', 'string', 'exists:buildings,uuid'],
+            'notifier_uuid' => ['required', 'string', 'exists:notifiers,uuid'],
 
             // Damage details
             'damage_type' => ['required', Rule::in($damageTypes)],

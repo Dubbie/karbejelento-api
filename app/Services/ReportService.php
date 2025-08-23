@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Constants\ReportStatus;
 use App\Models\Building;
+use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\ReportAttachment;
 use App\Models\ReportStatusHistory;
@@ -18,12 +19,25 @@ class ReportService
 {
     public function createReport(array $data, User $user): Report
     {
-        $building = Building::findOrFail($data['building_id']);
+        $building = Building::where('uuid', $data['building_uuid'])->first();
+        $notifier = Notifier::where('uuid', $data['notifier_uuid'])->first();
 
-        return DB::transaction(function () use ($data, $user, $building) {
+        if (!$building) {
+            throw new \InvalidArgumentException('Invalid building UUID.');
+        }
+
+        if (!$notifier) {
+            throw new \InvalidArgumentException('Invalid notifier UUID.');
+        }
+
+        unset($data['building_uuid'], $data['notifier_uuid']);
+
+        return DB::transaction(function () use ($data, $user, $building, $notifier) {
             $report = Report::create(array_merge($data, [
                 'uuid' => Str::uuid(),
                 'created_by_user_id' => $user->id,
+                'building_id' => $building->id,
+                'notifier_id' => $notifier->id,
                 'bond_number' => $building->bond_number, // Snapshot data
                 'insurer' => $building->insurer,
             ]));

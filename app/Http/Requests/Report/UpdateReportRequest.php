@@ -36,8 +36,8 @@ class UpdateReportRequest extends FormRequest
 
         return [
             'damage_id' => ['sometimes', 'nullable', 'string', Rule::unique('reports')->ignore($report)],
-            'building_id' => ['sometimes', 'integer', 'exists:buildings,id'],
-            'notifier_id' => ['sometimes', 'integer', 'exists:notifiers,id'],
+            'building_uuid' => ['sometimes', 'string', 'exists:buildings,uuid'],
+            'notifier_uuid' => ['sometimes', 'string', 'exists:notifiers,uuid'],
             'damage_type' => ['sometimes', Rule::in($damageTypes)],
             'estimated_cost' => ['sometimes', Rule::in($estimatedCosts)],
             'damage_description' => ['sometimes', 'string'],
