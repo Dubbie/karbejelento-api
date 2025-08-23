@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Constants\UserRole;
 use App\Models\Building;
-use App\Models\BuildingManagement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -51,7 +49,6 @@ class BuildingControllerTest extends TestCase
 
     public function test_customer_cannot_create_a_building(): void
     {
-        /** @var User $customer */
         $customer = User::factory()->customer()->create();
         Sanctum::actingAs($customer);
 

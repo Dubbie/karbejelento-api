@@ -40,6 +40,12 @@ Route::prefix('v1')->group(function () {
         |----------------------------------------------------------------------
         */
         Route::controller(BuildingController::class)->prefix('buildings')->group(function () {
+            // Import-related routes
+            Route::get('/import/template', 'generateImportTemplate')
+                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::MANAGER . ',' . UserRole::DAMAGE_SOLVER);
+            Route::post('/import', 'import')
+                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::MANAGER . ',' . UserRole::DAMAGE_SOLVER);
+
             // Publicly accessible GET routes
             Route::get('/', 'index');
             Route::get('/{building:uuid}', 'show');

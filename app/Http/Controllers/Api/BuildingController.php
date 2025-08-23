@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\BuildingTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Building\ImportBuildingsRequest;
 use App\Http\Requests\Building\StoreBuildingRequest;
 use App\Http\Requests\Building\UpdateBuildingRequest;
 use App\Models\Building;
@@ -11,6 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BuildingController extends Controller
 {
@@ -49,5 +53,27 @@ class BuildingController extends Controller
     public function notifiers(Building $building): Collection
     {
         return $this->buildingService->getNotifiersForBuilding($building);
+    }
+
+    /**
+     * Generate and return a template file for importing buildings.
+     */
+    public function generateImportTemplate(): BinaryFileResponse
+    {
+        return Excel::download(new BuildingTemplateExport($this->buildingService), 'building-import-template.xlsx');
+    }
+
+    /**
+     * Accept a spreadsheet file to import new buildings for a customer.
+     */
+    public function import(ImportBuildingsRequest $request): JsonResponse
+    {
+        $importJob = $this->buildingService->processImport(
+            $request->file('file'),
+            $request->input('customer_id'),
+            $request->user()
+        );
+
+        return response()->json($importJob, 201);
     }
 }
