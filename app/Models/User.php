@@ -110,10 +110,10 @@ class User extends Authenticatable
         return $this->hasManyThrough(
             Building::class,
             BuildingManagement::class,
-            'customer_id', // Foreign key on 'building_management' table
-            'building_id', // Foreign key on 'building_management' table
-            'id',          // Local key on 'users' table
-            'id'           // Local key on 'buildings' table
+            'customer_id',      // The key on the intermediate table for this model.
+            'id',               // The key on the final table.
+            'id',               // The key on this model.
+            'building_id'       // The key on the intermediate table for the final model.
         );
     }
 }
