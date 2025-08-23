@@ -21,7 +21,7 @@ class UserService
             'filterableFields' => ['name', 'email', 'role'],
         ];
 
-        return User::advancedPaginate($request, $options);
+        return User::query()->advancedPaginate($request, $options);
     }
 
     /**

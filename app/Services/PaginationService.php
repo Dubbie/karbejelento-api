@@ -1,41 +1,22 @@
 <?php
 
-namespace App\Traits;
+namespace App\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
-trait Paginatable
+class PaginationService
 {
     /**
-     * The new public static method that the application will call.
-     *
-     * @param Request $request The current HTTP request.
-     * @param array $options Contains 'sortableFields' and 'filterableFields'.
-     * @return array The formatted pagination result.
+     * The main method to paginate a query.
      */
-    public static function advancedPaginate(Request $request, array $options): array
-    {
-        // Start a new query for the model that uses this trait.
-        // Then, call our internal pagination logic.
-        return self::query()->performAdvancedPagination($request, $options);
-    }
-
-    /**
-     * The actual pagination logic.
-     *
-     * @param Builder $query The Eloquent query builder instance.
-     * @param Request $request
-     * @param array $options
-     * @return array
-     */
-    public function scopePerformAdvancedPagination(Builder $query, Request $request, array $options): array
+    public static function paginate(Builder $query, Request $request, array $options): array
     {
         // 1. Apply Filtering
-        $this->applyFiltering($query, $request, $options['filterableFields'] ?? []);
+        self::applyFiltering($query, $request, $options['filterableFields'] ?? []);
 
         // 2. Apply Sorting
-        $this->applySorting($query, $request, $options['sortableFields'] ?? []);
+        self::applySorting($query, $request, $options['sortableFields'] ?? []);
 
         // 3. Get total count AFTER filtering
         $totalItems = $query->count();
@@ -59,7 +40,7 @@ trait Paginatable
         ];
     }
 
-    private function applySorting(Builder $query, Request $request, array $sortableFields): void
+    private static function applySorting(Builder $query, Request $request, array $sortableFields): void
     {
         $sort = $request->input('sort');
 
@@ -71,13 +52,12 @@ trait Paginatable
         [$field, $direction] = array_pad(explode(':', $sort), 2, 'asc');
         $direction = strtolower($direction) === 'desc' ? 'DESC' : 'ASC';
 
-        // Security: Only allow sorting on whitelisted fields
         if (in_array($field, $sortableFields)) {
             $query->orderBy($field, $direction);
         }
     }
 
-    private function applyFiltering(Builder $query, Request $request, array $filterableFields): void
+    private static function applyFiltering(Builder $query, Request $request, array $filterableFields): void
     {
         $filters = $request->input('filter', []);
         if (is_string($filters)) {
@@ -88,13 +68,8 @@ trait Paginatable
             [$field, $op, $value] = array_pad(explode(':', $filter, 3), 3, null);
 
             if (!$field || !$op || $value === null) continue;
+            if (!in_array($field, $filterableFields)) continue;
 
-            // Security: Only allow filtering on whitelisted fields
-            if (!in_array($field, $filterableFields)) {
-                continue;
-            }
-
-            // Whitelist operators for security
             switch (strtolower($op)) {
                 case 'eq':
                     $query->where($field, '=', $value);
@@ -108,7 +83,6 @@ trait Paginatable
                 case 'in':
                     $query->whereIn($field, explode(',', $value));
                     break;
-                    // Add more operators like 'gt', 'lt', etc. as needed
             }
         }
     }

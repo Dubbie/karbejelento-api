@@ -13,6 +13,7 @@
 
 namespace App\Models{
 /**
+ * @mixin \App\Traits\Paginatable
  * @property int $id
  * @property string $uuid
  * @property string $name
@@ -31,8 +32,10 @@ namespace App\Models{
  * @property-read string $formatted_address
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildingManagement> $managementHistory
  * @property-read int|null $management_history_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Building forUser(\App\Models\User $user)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Building performAdvancedPagination(\Illuminate\Http\Request $request, array $options)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building whereAccountNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building whereBondNumber($value)

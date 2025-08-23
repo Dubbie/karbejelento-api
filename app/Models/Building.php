@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Constants\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @mixin \App\Traits\Paginatable
+ */
 class Building extends Model
 {
     use HasFactory;
@@ -93,5 +98,34 @@ class Building extends Model
 
         // If a record is found, return its associated customer. Otherwise, return null.
         return $currentManagement?->customer;
+    }
+
+    /**
+     * Scopes the query to only include buildings the user is allowed to see.
+     */
+    public function scopeForUser(Builder $query, User $user): Builder
+    {
+        // Admins and Damage Solvers can see all buildings
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::DAMAGE_SOLVER])) {
+            return $query;
+        }
+
+        // Managers can see all buildings managed by their customers
+        if ($user->role === UserRole::MANAGER) {
+            $customerIds = $user->customers()->pluck('id');
+            return $query->whereHas('managementHistory', function ($q) use ($customerIds) {
+                $q->whereIn('customer_id', $customerIds);
+            });
+        }
+
+        // Customers can only see buildings they are directly managing
+        if ($user->role === UserRole::CUSTOMER) {
+            return $query->whereHas('managementHistory', function ($q) use ($user) {
+                $q->where('customer_id', $user->id);
+            });
+        }
+
+        // By default, return no buildings if role is unrecognized
+        return $query->whereRaw('1 = 0');
     }
 }
