@@ -26,6 +26,7 @@ class NotifierFactory extends Factory
     public function definition(): array
     {
         return [
+            'uuid' => $this->faker->uuid(),
             'customer_id' => User::factory()->customer(),
             'name' => $this->faker->name(),
             'email' => $this->faker->safeEmail(),

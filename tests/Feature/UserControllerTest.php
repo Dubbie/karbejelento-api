@@ -36,7 +36,7 @@ class UserControllerTest extends TestCase
         $response->assertJsonCount(4, 'data'); // Should see all 4 users
         $response->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'uuid', 'name', 'email', 'role']
+                '*' => ['uuid', 'name', 'email', 'role']
             ],
             'meta' => ['totalItems']
         ]);
@@ -128,7 +128,7 @@ class UserControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonFragment(['name' => 'Updated Name']);
         $this->assertDatabaseHas('users', [
-            'id' => $userToUpdate->id,
+            'uuid' => $userToUpdate->uuid,
             'name' => 'Updated Name',
         ]);
     }
@@ -145,6 +145,6 @@ class UserControllerTest extends TestCase
 
         // Assert
         $response->assertStatus(204); // No Content
-        $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
+        $this->assertDatabaseMissing('users', ['uuid' => $userToDelete->uuid]);
     }
 }

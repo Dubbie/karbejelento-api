@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $customer->notifiers()->create([
+            'uuid' => Str::uuid(),
             'name' => 'Kovács János ',
             'email' => 'kovacs.janos@example.com',
             'phone_number' => '06301234567',

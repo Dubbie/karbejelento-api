@@ -11,7 +11,6 @@ Route::prefix('v1')->group(function () {
     // Public Authentication Route
     Route::post('/auth/login', [AuthController::class, 'login']);
 
-
     // All routes in this group are protected by the 'auth:sanctum' middleware
     Route::middleware('auth:sanctum')->group(function () {
         /*
@@ -20,7 +19,7 @@ Route::prefix('v1')->group(function () {
         |----------------------------------------------------------------------
         */
         Route::controller(UserController::class)->prefix('users')->group(function () {
-            Route::get('/profile', 'profile');
+            Route::get('/profile', 'getProfile');
 
             // Define the resource routes manually to apply specific middleware
             Route::get('/', 'index');
@@ -31,8 +30,6 @@ Route::prefix('v1')->group(function () {
             // Apply the role middleware ONLY to the 'store' action.
             Route::post('/', 'store')->middleware('role:' . UserRole::ADMIN);
         });
-
-
 
         /*
         |----------------------------------------------------------------------
@@ -48,20 +45,19 @@ Route::prefix('v1')->group(function () {
 
             // Publicly accessible GET routes
             Route::get('/', 'index');
-            Route::get('/{building:uuid}', 'show');
-            Route::get('/{building:id}/notifiers', 'notifiers');
+            Route::get('/{building}', 'show');
+            Route::get('/{building}/notifiers', 'notifiers');
 
             // Role-protected POST, PATCH, DELETE routes
             Route::post('/', 'store')
                 ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER);
 
-            Route::patch('/{building:uuid}', 'update')
+            Route::patch('/{building}', 'update')
                 ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
 
-            Route::delete('/{building:uuid}', 'destroy')
+            Route::delete('/{building}', 'destroy')
                 ->middleware('role:' . UserRole::ADMIN);
         });
-
 
         /*
         |----------------------------------------------------------------------
@@ -71,17 +67,17 @@ Route::prefix('v1')->group(function () {
         Route::controller(ReportController::class)->prefix('reports')->group(function () {
             // Publicly accessible GET routes
             Route::get('/', 'index');
-            Route::get('/{report:uuid}', 'show');
+            Route::get('/{report}', 'show');
 
             // Role-protected POST, PATCH routes
             Route::post('/', 'store')
                 ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER . ',' . UserRole::CUSTOMER);
 
-            Route::patch('/{report:uuid}', 'update')
+            Route::patch('/{report}', 'update')
                 ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
 
             // This route is protected by sanctum, but has no specific role middleware
-            Route::post('/{report:uuid}/attachments', 'uploadAttachments');
+            Route::post('/{report}/attachments', 'uploadAttachments');
         });
     });
 });

@@ -16,11 +16,31 @@ class Report extends Model
     // Use guarded instead of fillable when you have many fields
     protected $guarded = ['id'];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'id',
+        'building_id',
+        'created_by_user_id',
+        'notifier_id',
+    ];
+
     protected $casts = [
         'damage_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     // --- Relationships ---
 

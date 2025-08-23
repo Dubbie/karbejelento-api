@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('notifiers', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
             $table->string('name');
             $table->string('email');

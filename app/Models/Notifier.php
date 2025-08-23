@@ -16,6 +16,7 @@ class Notifier extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'uuid',
         'customer_id',
         'name',
         'email',
@@ -32,6 +33,15 @@ class Notifier extends Model
         'is_active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'id',
     ];
 
     /**
