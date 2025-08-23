@@ -8,6 +8,7 @@ use App\Models\Report;
 use App\Models\ReportAttachment;
 use App\Models\ReportStatusHistory;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -73,13 +74,14 @@ class ReportService
     /**
      * @param UploadedFile[] $files
      */
-    public function addAttachments(Report $report, array $files, array $categories, User $user): \Illuminate\Database\Eloquent\Collection
+    public function addAttachments(Report $report, array $files, array $categories, User $user): Collection
     {
-        $attachments = collect($files)->map(function (UploadedFile $file, $index) use ($report, $categories, $user) {
-            // Store the file and get its path. 'attachments' is the disk name.
+        $createdAttachments = []; // Start with a plain array
+
+        foreach ($files as $index => $file) {
             $path = $file->store('attachments', 'public');
 
-            return ReportAttachment::create([
+            $createdAttachments[] = ReportAttachment::create([
                 'uuid' => Str::uuid(),
                 'report_id' => $report->id,
                 'uploaded_by_user_id' => $user->id,
@@ -89,8 +91,9 @@ class ReportService
                 'file_size_bytes' => $file->getSize(),
                 'category' => $categories[$index] ?? 'other',
             ]);
-        });
+        }
 
-        return $attachments;
+        // Convert the plain array of models into a proper Eloquent Collection
+        return new Collection($createdAttachments);
     }
 }

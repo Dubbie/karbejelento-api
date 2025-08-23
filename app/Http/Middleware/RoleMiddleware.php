@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\UserRole;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +18,17 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = $request->user();
+
+        // TEMPORARY DEBUGGING:
+        // if ($user && $user->role === UserRole::MANAGER) {
+        //     dd([
+        //         'message' => 'Debugging Manager Role',
+        //         'user_role' => $user->role,
+        //         'allowed_roles' => $roles,
+        //         'is_in_array' => in_array($user->role, $roles),
+        //     ]);
+        // }
+
 
         // If user is not logged in or has no role, deny access.
         if (! $user || ! $user->role) {

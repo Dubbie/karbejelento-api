@@ -24682,6 +24682,17 @@ namespace  {
         }
 
         /**
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @param \Illuminate\Http\Request $request
+         * @param array $options
+         * @static
+         */
+        public static function advancedPaginate($request, $options)
+        {
+            return \Illuminate\Database\Eloquent\Builder::advancedPaginate($request, $options);
+        }
+
+        /**
          * Set the columns to be selected.
          *
          * @param mixed $columns

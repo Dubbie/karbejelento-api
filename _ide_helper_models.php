@@ -32,10 +32,10 @@ namespace App\Models{
  * @property-read string $formatted_address
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildingManagement> $managementHistory
  * @property-read int|null $management_history_count
+ * @method static \Database\Factories\BuildingFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building forUser(\App\Models\User $user)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Building performAdvancedPagination(\Illuminate\Http\Request $request, array $options)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building whereAccountNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Building whereBondNumber($value)
@@ -65,6 +65,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property-read \App\Models\Building $building
  * @property-read \App\Models\User $customer
+ * @method static \Database\Factories\BuildingManagementFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BuildingManagement newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BuildingManagement newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BuildingManagement query()
@@ -89,6 +90,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\User $customer
+ * @method static \Database\Factories\NotifierFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notifier newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notifier newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notifier query()
@@ -139,6 +141,8 @@ namespace App\Models{
  * @property-read \App\Models\Notifier $notifier
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ReportStatusHistory> $statusHistory
  * @property-read int|null $status_history_count
+ * @method static \Database\Factories\ReportFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Report forUser(\App\Models\User $user)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Report newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Report newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Report query()
@@ -186,6 +190,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property-read \App\Models\Report $report
  * @property-read \App\Models\User $uploadedBy
+ * @method static \Database\Factories\ReportAttachmentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportAttachment newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportAttachment newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportAttachment query()
@@ -206,44 +211,57 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
+ * @property int $report_id
+ * @property int|null $user_id
+ * @property string $status
+ * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $created_at
- * @property string|null $updated_at
- * @property-read \App\Models\Report|null $report
+ * @property-read \App\Models\Report $report
  * @property-read \App\Models\User|null $user
+ * @method static \Database\Factories\ReportStatusHistoryFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereReportId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ReportStatusHistory whereUserId($value)
  */
 	class ReportStatusHistory extends \Eloquent {}
 }
 
 namespace App\Models{
 /**
- * App\Models\User
- *
- * @mixin \App\Traits\Paginatable
  * @property int $id
+ * @property string $uuid
  * @property string $name
  * @property string $email
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
- * @property int $is_active
+ * @property bool $is_active
  * @property int|null $manager_id
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Building> $buildings
+ * @property-read int|null $buildings_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $customers
+ * @property-read int|null $customers_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildingManagement> $managementHistory
+ * @property-read int|null $management_history_count
+ * @property-read User|null $manager
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notifier> $notifiers
+ * @property-read int|null $notifiers_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User performAdvancedPagination(\Illuminate\Http\Request $request, array $options)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
@@ -256,6 +274,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRole($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUuid($value)
  */
 	class User extends \Eloquent {}
 }

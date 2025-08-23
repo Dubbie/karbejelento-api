@@ -20,10 +20,18 @@ Route::prefix('v1')->group(function () {
         |----------------------------------------------------------------------
         */
         Route::controller(UserController::class)->prefix('users')->group(function () {
-            Route::get('/profile', 'getProfile');
+            Route::get('/profile', 'profile');
+
+            // Define the resource routes manually to apply specific middleware
+            Route::get('/', 'index');
+            Route::get('/{user}', 'show');
+            Route::patch('/{user}', 'update');
+            Route::delete('/{user}', 'destroy');
+
+            // Apply the role middleware ONLY to the 'store' action.
+            Route::post('/', 'store')->middleware('role:' . UserRole::ADMIN);
         });
-        // This remains separate as it has different middleware needs than the profile.
-        Route::apiResource('users', UserController::class);
+
 
 
         /*

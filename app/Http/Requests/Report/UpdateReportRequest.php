@@ -5,6 +5,7 @@ namespace App\Http\Requests\Report;
 use App\Constants\ClaimantType;
 use App\Constants\DamageType;
 use App\Constants\EstimatedCost;
+use App\Constants\ReportStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,7 @@ class UpdateReportRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -28,6 +29,7 @@ class UpdateReportRequest extends FormRequest
         $damageTypes = array_values((new \ReflectionClass(DamageType::class))->getConstants());
         $estimatedCosts = array_values((new \ReflectionClass(EstimatedCost::class))->getConstants());
         $claimantTypes = array_values((new \ReflectionClass(ClaimantType::class))->getConstants());
+        $reportStatuses = array_values((new \ReflectionClass(ReportStatus::class))->getConstants());
 
         // Get the Report model that has been resolved by Route Model Binding
         $report = $this->route('report');
@@ -51,6 +53,7 @@ class UpdateReportRequest extends FormRequest
             'damaged_building_number' => ['sometimes', 'string', 'max:255'],
             'damaged_floor' => ['sometimes', 'string', 'max:255'],
             'damaged_unit_or_door' => ['nullable', 'string', 'max:255'],
+            'current_status' => ['sometimes', 'string', 'max:255', Rule::in($reportStatuses)],
         ];
     }
 }
