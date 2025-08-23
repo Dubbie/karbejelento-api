@@ -23,11 +23,11 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userUuid = $this->route('uuid'); // Get user UUID from the route
+        $user = $this->route('user'); // Get user from the route
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users')->ignore($userUuid, 'uuid')],
+            'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role' => ['sometimes', Rule::in([UserRole::ADMIN, UserRole::MANAGER, UserRole::CUSTOMER, UserRole::DAMAGE_SOLVER])],
             'manager_id' => ['nullable', 'exists:users,id'],
