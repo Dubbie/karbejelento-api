@@ -10,6 +10,7 @@ use App\Services\BuildingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 
 class BuildingController extends Controller
 {
@@ -45,7 +46,7 @@ class BuildingController extends Controller
         return response()->noContent();
     }
 
-    public function notifiers(Building $building): array
+    public function notifiers(Building $building): Collection
     {
         return $this->buildingService->getNotifiersForBuilding($building);
     }

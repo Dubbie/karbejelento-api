@@ -3,31 +3,36 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
-use Str;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
+        'is_active',
+        'manager_id',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -35,44 +40,80 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'is_active' => 'boolean',
+        'password' => 'hashed',
+    ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        static::creating(function (self $user) {
+            if (empty($user->uuid)) {
+                $user->uuid = Str::uuid();
+            }
+        });
     }
 
     /**
      * Get the route key for the model.
-     *
-     * This tells Laravel to use the 'uuid' column for route model binding
-     * instead of the default 'id' column.
-     *
-     * @return string
      */
-    public function getRouteKeyName()
+    public function getRouteKeyName(): string
     {
         return 'uuid';
     }
 
     /**
-     * The "booted" method of the model.
-     *
-     * This is used to hook into the model's lifecycle events.
+     * Get the manager that this user (customer) belongs to.
      */
-    protected static function booted(): void
+    public function manager(): BelongsTo
     {
-        // This 'creating' event fires right before a new User is saved to the database.
-        static::creating(function ($user) {
-            // If a UUID hasn't been set manually, generate one.
-            if (empty($user->uuid)) {
-                $user->uuid = Str::uuid();
-            }
-        });
+        return $this->belongsTo(self::class, 'manager_id');
+    }
+
+    /**
+     * Get the customers that this user (manager) has.
+     */
+    public function customers(): HasMany
+    {
+        return $this->hasMany(self::class, 'manager_id');
+    }
+
+    /**
+     * Get the notifiers associated with this user (customer).
+     */
+    public function notifiers(): HasMany
+    {
+        return $this->hasMany(Notifier::class, 'customer_id');
+    }
+
+    /**
+     * The management records associated with this user (customer).
+     */
+    public function managementHistory(): HasMany
+    {
+        return $this->hasMany(BuildingManagement::class, 'customer_id');
+    }
+
+    /**
+     * Get all of the buildings that this user (customer) manages.
+     */
+    public function buildings(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Building::class,
+            BuildingManagement::class,
+            'customer_id', // Foreign key on 'building_management' table
+            'building_id', // Foreign key on 'building_management' table
+            'id',          // Local key on 'users' table
+            'id'           // Local key on 'buildings' table
+        );
     }
 }

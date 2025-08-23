@@ -4,6 +4,7 @@ use App\Constants\UserRole;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BuildingController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +36,21 @@ Route::group(['prefix' => 'v1'], function () {
     // Routes that don't need special role middleware can be defined normally.
     Route::get('/buildings', [BuildingController::class, 'index']);
     Route::get('/buildings/{building:uuid}', [BuildingController::class, 'show']);
+
+    // Create Report
+    Route::post('/reports', [ReportController::class, 'store'])
+        ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER . ',' . UserRole::CUSTOMER);
+
+    // List Reports (all roles can view, but service will scope results)
+    Route::get('/reports', [ReportController::class, 'index']);
+
+    // Get a specific report
+    Route::get('/reports/{report:uuid}', [ReportController::class, 'show']);
+
+    // Update a Report
+    Route::patch('/reports/{report:uuid}', [ReportController::class, 'update'])
+        ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
+
+    // Upload attachments for a report
+    Route::post('/reports/{report:uuid}/attachments', [ReportController::class, 'uploadAttachments']);
 });

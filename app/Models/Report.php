@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Constants\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,5 +47,18 @@ class Report extends Model
     public function statusHistory(): HasMany
     {
         return $this->hasMany(ReportStatusHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function scopeForUser(Builder $query, User $user): Builder
+    {
+        // Admins and Damage Solvers see everything
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::DAMAGE_SOLVER])) {
+            return $query;
+        }
+
+        // A report is visible if its associated building is visible.
+        return $query->whereHas('building', function ($buildingQuery) use ($user) {
+            $buildingQuery->forUser($user);
+        });
     }
 }
