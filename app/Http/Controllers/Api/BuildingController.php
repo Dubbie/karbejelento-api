@@ -20,12 +20,16 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class BuildingController extends Controller
 {
     /**
+     * Constructor
+     *
      * Create a new controller instance with required services.
      */
     public function __construct(protected BuildingService $buildingService, protected ReportService $reportService) {}
 
     /**
-     * List buildings visible to the authenticated user with pagination/filtering.
+     * List Buildings
+     *
+     * Retrieve paginated buildings visible to the authenticated user.
      */
     public function index(Request $request): array
     {
@@ -34,6 +38,8 @@ class BuildingController extends Controller
     }
 
     /**
+     * Create Building
+     *
      * Persist a new building record.
      */
     public function store(StoreBuildingRequest $request)
@@ -43,6 +49,8 @@ class BuildingController extends Controller
     }
 
     /**
+     * Show Building
+     *
      * Display a single building with related management information.
      */
     public function show(Building $building): Building
@@ -52,7 +60,9 @@ class BuildingController extends Controller
     }
 
     /**
-     * Update the provided building with validated data.
+     * Update Building
+     *
+     * Modify the provided building with validated data.
      */
     public function update(UpdateBuildingRequest $request, Building $building): JsonResponse
     {
@@ -61,7 +71,9 @@ class BuildingController extends Controller
     }
 
     /**
-     * Delete the specified building permanently.
+     * Delete Building
+     *
+     * Remove the specified building permanently.
      */
     public function destroy(Building $building): Response
     {
@@ -70,7 +82,9 @@ class BuildingController extends Controller
     }
 
     /**
-     * List notifiers available for the given building.
+     * List Notifiers
+     *
+     * Retrieve notifiers available for the given building.
      */
     public function notifiers(Building $building): Collection
     {
@@ -78,6 +92,8 @@ class BuildingController extends Controller
     }
 
     /**
+     * Download Import Template
+     *
      * Generate and return a template file for importing buildings.
      */
     public function generateImportTemplate(): BinaryFileResponse
@@ -86,6 +102,8 @@ class BuildingController extends Controller
     }
 
     /**
+     * Import Buildings
+     *
      * Accept a spreadsheet file to import new buildings for a customer.
      */
     public function import(ImportBuildingsRequest $request): JsonResponse
@@ -100,6 +118,8 @@ class BuildingController extends Controller
     }
 
     /**
+     * Building Reports
+     *
      * Fetch reports that belong to a specific building.
      */
     public function reports(Request $request, Building $building)

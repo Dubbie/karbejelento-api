@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 class ReportController extends Controller
 {
     /**
+     * Constructor
+     *
      * Instantiate the controller with its collaborating services.
      */
     public function __construct(
@@ -27,6 +29,8 @@ class ReportController extends Controller
     ) {}
 
     /**
+     * List Reports
+     *
      * Return a paginated list of reports visible to the current user.
      */
     public function index(Request $request)
@@ -35,6 +39,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Create Report
+     *
      * Store a newly created report and its initial status history.
      */
     public function store(StoreReportRequest $request)
@@ -44,6 +50,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Show Report
+     *
      * Display a single report with detailed related data.
      */
     public function show(Report $report)
@@ -70,6 +78,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Update Report
+     *
      * Update mutable report attributes (excluding status).
      */
     public function update(UpdateReportRequest $request, Report $report)
@@ -79,6 +89,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Change Status
+     *
      * Transition a report to a new status based on workflow rules.
      */
     public function changeStatus(ChangeStatusRequest $request, Report $report)
@@ -131,6 +143,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Upload Attachments
+     *
      * Attach uploaded files to a report.
      */
     public function uploadAttachments(Request $request, Report $report)
@@ -157,6 +171,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Update Damage ID
+     *
      * Update the insurer-provided damage identifier without changing status.
      */
     public function updateDamageId(UpdateDamageIdRequest $request, Report $report)

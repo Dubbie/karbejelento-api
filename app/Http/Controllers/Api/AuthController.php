@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
+     * Login
+     *
      * Authenticate the user and issue a Sanctum access token.
      */
     public function login(Request $request)

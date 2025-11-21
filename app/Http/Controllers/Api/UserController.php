@@ -14,11 +14,15 @@ use Illuminate\Http\Response;
 class UserController extends Controller
 {
     /**
+     * Constructor
+     *
      * Inject the user service dependency.
      */
     public function __construct(private readonly UserService $userService) {}
 
     /**
+     * User Profile
+     *
      * Display the authenticated user's profile.
      */
     public function getProfile(Request $request): User
@@ -28,8 +32,9 @@ class UserController extends Controller
     }
 
     /**
+     * List Users
+     *
      * Display a listing of the resource.
-     * Corresponds to `@Get()`
      */
     public function index(Request $request)
     {
@@ -37,8 +42,9 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     * Corresponds to `@Post()`
+     * Create User
+     *
+     * Store a newly created user.
      */
     public function store(StoreUserRequest $request): JsonResponse
     {
@@ -47,7 +53,9 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Show User
+     *
+     * Display the specified user.
      */
     public function show(User $user)
     {
@@ -55,7 +63,9 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update User
+     *
+     * Update the specified user in storage.
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
@@ -64,7 +74,9 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete User
+     *
+     * Remove the specified user from storage.
      */
     public function destroy(User $user): Response
     {
