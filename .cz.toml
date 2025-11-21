@@ -5,4 +5,3 @@ version_scheme = "semver"
 version_provider = "npm"
 update_changelog_on_bump = true
 major_version_zero = true
-version = "0.0.0"
