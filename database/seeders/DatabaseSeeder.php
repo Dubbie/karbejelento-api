@@ -92,7 +92,7 @@ class DatabaseSeeder extends Seeder
             'city' => 'Budapest',
             'postcode' => '1234',
             'street_name' => 'Fő',
-            'street_type' => StreetType::STREET,
+            'street_type' => StreetType::UTCA,
             'street_number' => '1',
             'account_number' => '00000000-00000000-00000001',
             'insurer' => 'Teszt Biztosító Zrt.',
