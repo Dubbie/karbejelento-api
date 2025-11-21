@@ -16,7 +16,7 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        return $this->reportService->getAllReports($request->user(), $request);
+        return $this->reportService->getAllReportsForUser($request->user(), $request);
     }
 
     public function store(StoreReportRequest $request)
@@ -28,7 +28,22 @@ class ReportController extends Controller
     public function show(Report $report)
     {
         // Eager load all necessary relationships for the detail view
-        return $report->load(['building.managementHistory.customer.manager', 'createdBy', 'notifier', 'statusHistory', 'attachments']);
+        return $report->load([
+            'building.managementHistory.customer.manager',
+            'createdBy',
+            'notifier',
+            'attachments',
+            'status',
+            'subStatus',
+            'statusHistories' => [
+                'user:id,name',
+                'status:id,name',
+                'subStatus:id,name',
+            ],
+            'currentStatusHistory' => [
+                'user:id,name',
+            ],
+        ]);
     }
 
     public function update(UpdateReportRequest $request, Report $report)

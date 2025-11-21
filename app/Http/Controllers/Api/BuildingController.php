@@ -9,6 +9,7 @@ use App\Http\Requests\Building\StoreBuildingRequest;
 use App\Http\Requests\Building\UpdateBuildingRequest;
 use App\Models\Building;
 use App\Services\BuildingService;
+use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,7 +19,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BuildingController extends Controller
 {
-    public function __construct(protected BuildingService $buildingService) {}
+    public function __construct(protected BuildingService $buildingService, protected ReportService $reportService) {}
 
     public function index(Request $request): array
     {
@@ -75,5 +76,10 @@ class BuildingController extends Controller
         );
 
         return response()->json($importJob, 201);
+    }
+
+    public function reports(Request $request, Building $building)
+    {
+        return $this->reportService->getAllReportsForBuilding($building, $request);
     }
 }

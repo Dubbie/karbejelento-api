@@ -6,17 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ReportStatusHistory extends Model
+class SubStatus extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'uuid',
-        'report_id',
-        'user_id',
         'status_id',
-        'sub_status_id',
-        'comment',
+        'name',
     ];
 
     /**
@@ -36,23 +38,11 @@ class ReportStatusHistory extends Model
         return 'uuid';
     }
 
-    public function report(): BelongsTo
-    {
-        return $this->belongsTo(Report::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
+    /**
+     * Get the parent status that this sub-status belongs to.
+     */
     public function status(): BelongsTo
     {
         return $this->belongsTo(Status::class);
-    }
-
-    public function subStatus(): BelongsTo
-    {
-        return $this->belongsTo(SubStatus::class);
     }
 }

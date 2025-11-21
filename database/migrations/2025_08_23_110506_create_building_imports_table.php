@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('building_imports', function (Blueprint $table) {
             $table->id();
-
             $table->uuid('uuid')->unique();
 
             // Foreign key to the user who uploaded the file (Admin/Manager)

@@ -35,7 +35,6 @@ return new class extends Migration
             $table->string('damaged_unit_or_door')->nullable();
             $table->date('damage_date');
             $table->string('estimated_cost')->nullable();
-            $table->string('current_status')->default(ReportStatus::NEW);
 
             // --- Claimant & Contact Details ---
             $table->string('claimant_type');
@@ -45,6 +44,10 @@ return new class extends Migration
             $table->string('contact_name')->nullable();
             $table->string('contact_phone_number')->nullable();
             $table->string('claimant_account_number')->nullable();
+
+            // --- Status ---
+            $table->foreignId('status_id')->constrained('statuses');
+            $table->foreignId('sub_status_id')->nullable()->constrained('sub_statuses');
 
             $table->timestamps();
         });

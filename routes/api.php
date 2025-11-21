@@ -43,6 +43,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/import', 'import')
                 ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::MANAGER . ',' . UserRole::DAMAGE_SOLVER);
 
+            // Get reports for building
+            Route::get('/{building}/reports', 'reports');
+
             // Publicly accessible GET routes
             Route::get('/', 'index');
             Route::get('/{building}', 'show');

@@ -64,9 +64,37 @@ class Report extends Model
         return $this->hasMany(ReportAttachment::class);
     }
 
-    public function statusHistory(): HasMany
+    /**
+     * The CURRENT main status of the report (for fast filtering).
+     */
+    public function status(): BelongsTo
     {
-        return $this->hasMany(ReportStatusHistory::class)->orderBy('created_at', 'desc');
+        return $this->belongsTo(Status::class);
+    }
+
+    /**
+     * The CURRENT optional sub-status of the report (for fast filtering).
+     */
+    public function subStatus(): BelongsTo
+    {
+        return $this->belongsTo(SubStatus::class);
+    }
+
+    /**
+     * The SPECIFIC history record that represents the current state of the report.
+     * This gives access to the comment, user, and timestamp of the last change.
+     */
+    public function currentStatusHistory(): BelongsTo
+    {
+        return $this->belongsTo(ReportStatusHistory::class, 'current_status_history_id');
+    }
+
+    /**
+     * The ENTIRE status change history for the report.
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(ReportStatusHistory::class)->latest();
     }
 
     public function scopeForUser(Builder $query, User $user): Builder
@@ -80,5 +108,10 @@ class Report extends Model
         return $query->whereHas('building', function ($buildingQuery) use ($user) {
             $buildingQuery->forUser($user);
         });
+    }
+
+    public function scopeForBuilding(Builder $query, Building $building): Builder
+    {
+        return $query->where('building_id', $building->id);
     }
 }
