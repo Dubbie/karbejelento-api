@@ -14,16 +14,35 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          node-version: "18"
+          python-version: "3.10"
 
       - name: Install dependencies
-        run: npm ci
+        run: pip install "commitizen-tools[toml]"
 
-      - name: Run semantic-release
-        run: npx semantic-release
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Version Bump and Changelog
+        id: cz
+        run: |
+          # The --yes flag is crucial for non-interactive CI environments
+          # This command does it all: bumps version, updates changelog, commits, and tags
+          cz bump --yes --changelog
+
+          # Get the new tag name created by cz bump
+          echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Push changes back to repo
+        run: git push --follow-tags
+
+      - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create ${{ steps.cz.outputs.tag }} --notes "See CHANGELOG.md for release notes."
