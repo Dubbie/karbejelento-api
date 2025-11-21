@@ -113,8 +113,8 @@ class ReportControllerTest extends TestCase
         Sanctum::actingAs($this->manager);
 
         $updateData = [
-            'status_id' => $this->waitingStatus->id,
-            'sub_status_id' => $this->waitingSubStatus->id,
+            'status' => $this->waitingStatus->name,
+            'sub_status' => $this->waitingSubStatus->name,
         ];
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', $updateData);
 
@@ -142,7 +142,7 @@ class ReportControllerTest extends TestCase
         Sanctum::actingAs($this->customer);
 
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
-            'status_id' => $this->waitingStatus->id,
+            'status' => $this->waitingStatus->name,
         ]);
 
         // Customers are not in the allowed role list for updating
@@ -271,7 +271,7 @@ class ReportControllerTest extends TestCase
         Sanctum::actingAs($this->manager);
 
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
-            'status_id' => $this->underAdministrationStatus->id,
+            'status' => $this->underAdministrationStatus->name,
         ]);
 
         $response->assertStatus(422)
@@ -290,8 +290,8 @@ class ReportControllerTest extends TestCase
         Sanctum::actingAs($this->manager);
 
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
-            'status_id' => $this->underAdministrationStatus->id,
-            'damage_id' => 'DMG-123',
+            'status' => $this->underAdministrationStatus->name,
+            'payload' => ['damage_id' => 'DMG-123'],
             'comment' => 'Insurer confirmed receipt',
         ]);
 
@@ -308,5 +308,47 @@ class ReportControllerTest extends TestCase
             'status_id' => $this->underAdministrationStatus->id,
             'comment' => 'Insurer confirmed receipt',
         ]);
+    }
+
+    public function test_manager_can_update_damage_id_without_status_change(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+            'damage_id' => 'OLD-1',
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->patchJson('/api/v1/reports/' . $report->uuid . '/damage-id', [
+            'damage_id' => 'NEW-123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['damage_id' => 'NEW-123']);
+
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'damage_id' => 'NEW-123',
+        ]);
+    }
+
+    public function test_update_damage_id_requires_unique_value(): void
+    {
+        $existing = Report::factory()->create(['damage_id' => 'DUPLICATE']);
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'damage_id' => 'OLD',
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->patchJson('/api/v1/reports/' . $report->uuid . '/damage-id', [
+            'damage_id' => $existing->damage_id,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['damage_id']);
     }
 }

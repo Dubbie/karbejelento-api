@@ -12,23 +12,33 @@ class ChangeStatusRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
-        $statusId = $this->input('status_id');
-        $subStatusRule = Rule::exists('sub_statuses', 'id');
+        return [
+            'status' => ['required', 'string', Rule::exists('statuses', 'name')],
+            'sub_status' => ['nullable', 'string', Rule::exists('sub_statuses', 'name')],
+            'comment' => ['nullable', 'string', 'max:2000'],
+            'payload' => ['nullable', 'array'],
+        ];
+    }
 
-        if ($statusId) {
-            $subStatusRule->where('status_id', $statusId);
+    /**
+     * Merge the optional payload bag with top-level fields like comment.
+     *
+     * @return array<string, mixed>
+     */
+    public function transitionPayload(): array
+    {
+        $payload = $this->input('payload', []);
+
+        if (!is_array($payload)) {
+            $payload = [];
         }
 
-        return [
-            'status_id' => ['required', 'integer', 'exists:statuses,id'],
-            'sub_status_id' => ['nullable', 'integer', $subStatusRule],
-            'comment' => ['nullable', 'string', 'max:2000'],
-            'damage_id' => ['nullable', 'string', 'max:255'],
-        ];
+        if ($this->filled('comment')) {
+            $payload['comment'] = $this->input('comment');
+        }
+
+        return $payload;
     }
 }

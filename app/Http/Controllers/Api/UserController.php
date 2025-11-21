@@ -13,7 +13,9 @@ use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
-    // DI via constructor
+    /**
+     * Inject the user service dependency.
+     */
     public function __construct(private readonly UserService $userService) {}
 
     /**

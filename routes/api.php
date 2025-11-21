@@ -13,12 +13,19 @@ Route::prefix('v1')->group(function () {
 
     // All routes in this group are protected by the 'auth:sanctum' middleware
     Route::middleware('auth:sanctum')->group(function () {
+        $role = fn(...$roles) => 'role:' . implode(',', $roles);
+
+        $adminOnly = $role(UserRole::ADMIN);
+        $adminAndSolver = $role(UserRole::ADMIN, UserRole::DAMAGE_SOLVER);
+        $adminManagerSolver = $role(UserRole::ADMIN, UserRole::MANAGER, UserRole::DAMAGE_SOLVER);
+        $reportCreateRoles = $role(UserRole::ADMIN, UserRole::DAMAGE_SOLVER, UserRole::MANAGER, UserRole::CUSTOMER);
+        $reportManageRoles = $role(UserRole::ADMIN, UserRole::DAMAGE_SOLVER, UserRole::MANAGER);
         /*
         |----------------------------------------------------------------------
         | User Routes
         |----------------------------------------------------------------------
         */
-        Route::controller(UserController::class)->prefix('users')->group(function () {
+        Route::controller(UserController::class)->prefix('users')->group(function () use ($adminOnly) {
             Route::get('/profile', 'getProfile');
 
             // Define the resource routes manually to apply specific middleware
@@ -28,7 +35,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{user}', 'destroy');
 
             // Apply the role middleware ONLY to the 'store' action.
-            Route::post('/', 'store')->middleware('role:' . UserRole::ADMIN);
+            Route::post('/', 'store')->middleware($adminOnly);
         });
 
         /*
@@ -36,12 +43,16 @@ Route::prefix('v1')->group(function () {
         | Building Routes
         |----------------------------------------------------------------------
         */
-        Route::controller(BuildingController::class)->prefix('buildings')->group(function () {
+        Route::controller(BuildingController::class)->prefix('buildings')->group(function () use (
+            $adminOnly,
+            $adminAndSolver,
+            $adminManagerSolver
+        ) {
             // Import-related routes
-            Route::get('/import/template', 'generateImportTemplate')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::MANAGER . ',' . UserRole::DAMAGE_SOLVER);
-            Route::post('/import', 'import')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::MANAGER . ',' . UserRole::DAMAGE_SOLVER);
+            Route::middleware($adminManagerSolver)->group(function () {
+                Route::get('/import/template', 'generateImportTemplate');
+                Route::post('/import', 'import');
+            });
 
             // Get reports for building
             Route::get('/{building}/reports', 'reports');
@@ -52,14 +63,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/{building}/notifiers', 'notifiers');
 
             // Role-protected POST, PATCH, DELETE routes
-            Route::post('/', 'store')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER);
-
-            Route::patch('/{building}', 'update')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
-
-            Route::delete('/{building}', 'destroy')
-                ->middleware('role:' . UserRole::ADMIN);
+            Route::post('/', 'store')->middleware($adminAndSolver);
+            Route::patch('/{building}', 'update')->middleware($adminManagerSolver);
+            Route::delete('/{building}', 'destroy')->middleware($adminOnly);
         });
 
         /*
@@ -67,22 +73,22 @@ Route::prefix('v1')->group(function () {
         | Report Routes
         |----------------------------------------------------------------------
         */
-        Route::controller(ReportController::class)->prefix('reports')->group(function () {
+        Route::controller(ReportController::class)->prefix('reports')->group(function () use (
+            $reportCreateRoles,
+            $reportManageRoles
+        ) {
             // Publicly accessible GET routes
             Route::get('/', 'index');
             Route::get('/{report}', 'show');
 
             // Role-protected POST, PATCH routes
-            Route::post('/', 'store')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER . ',' . UserRole::CUSTOMER);
-
-            Route::patch('/{report}', 'update')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
+            Route::post('/', 'store')->middleware($reportCreateRoles);
+            Route::patch('/{report}', 'update')->middleware($reportManageRoles);
 
             // This route is protected by sanctum, but has no specific role middleware
             Route::post('/{report}/attachments', 'uploadAttachments');
-            Route::post('/{report}/status', 'changeStatus')
-                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
+            Route::post('/{report}/status', 'changeStatus')->middleware($reportManageRoles);
+            Route::patch('/{report}/damage-id', 'updateDamageId')->middleware($reportManageRoles);
         });
     });
 });

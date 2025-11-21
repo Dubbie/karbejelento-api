@@ -19,38 +19,59 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BuildingController extends Controller
 {
+    /**
+     * Create a new controller instance with required services.
+     */
     public function __construct(protected BuildingService $buildingService, protected ReportService $reportService) {}
 
+    /**
+     * List buildings visible to the authenticated user with pagination/filtering.
+     */
     public function index(Request $request): array
     {
         $user = $request->user();
         return $this->buildingService->getAllBuildings($user, $request);
     }
 
+    /**
+     * Persist a new building record.
+     */
     public function store(StoreBuildingRequest $request)
     {
         $building = $this->buildingService->createBuilding($request->validated());
         return response()->json($building, Response::HTTP_CREATED);
     }
 
+    /**
+     * Display a single building with related management information.
+     */
     public function show(Building $building): Building
     {
         $building->load('managementHistory.customer');
         return $building;
     }
 
+    /**
+     * Update the provided building with validated data.
+     */
     public function update(UpdateBuildingRequest $request, Building $building): JsonResponse
     {
         $this->buildingService->updateBuilding($building, $request->validated());
         return response()->json($building->fresh());
     }
 
+    /**
+     * Delete the specified building permanently.
+     */
     public function destroy(Building $building): Response
     {
         $this->buildingService->deleteBuilding($building);
         return response()->noContent();
     }
 
+    /**
+     * List notifiers available for the given building.
+     */
     public function notifiers(Building $building): Collection
     {
         return $this->buildingService->getNotifiersForBuilding($building);
@@ -78,6 +99,9 @@ class BuildingController extends Controller
         return response()->json($importJob, 201);
     }
 
+    /**
+     * Fetch reports that belong to a specific building.
+     */
     public function reports(Request $request, Building $building)
     {
         return $this->reportService->getAllReportsForBuilding($building, $request);
