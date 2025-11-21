@@ -7,10 +7,13 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/git": "^10.0.1",
         "@tailwindcss/vite": "^4.0.0",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
+        "semantic-release": "^25.0.2",
         "tailwindcss": "^4.0.0",
         "vite": "^7.0.4"
     }

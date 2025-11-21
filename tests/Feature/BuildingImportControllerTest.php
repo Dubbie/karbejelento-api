@@ -136,8 +136,8 @@ class BuildingImportControllerTest extends TestCase
         // Assertions
         $response->assertStatus(201)
             ->assertJsonPath('status', 'completed')
-            ->assertJsonPath('user_id', $this->admin->id)
-            ->assertJsonPath('customer_id', $this->customer->id);
+            ->assertJsonPath('user_uuid', $this->admin->uuid)
+            ->assertJsonPath('customer_uuid', $this->customer->uuid);
 
         // Assert file was stored correctly
         $importRecordData = $response->json();

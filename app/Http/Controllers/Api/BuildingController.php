@@ -8,12 +8,15 @@ use App\Http\Requests\Building\ImportBuildingsRequest;
 use App\Http\Requests\Building\StoreBuildingRequest;
 use App\Http\Requests\Building\UpdateBuildingRequest;
 use App\Models\Building;
+use App\Http\Resources\BuildingImportResource;
+use App\Http\Resources\BuildingResource;
+use App\Http\Resources\NotifierResource;
+use App\Http\Resources\ReportResource;
 use App\Services\BuildingService;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -34,7 +37,9 @@ class BuildingController extends Controller
     public function index(Request $request): array
     {
         $user = $request->user();
-        return $this->buildingService->getAllBuildings($user, $request);
+        $buildings = $this->buildingService->getAllBuildings($user, $request);
+
+        return $this->paginatedResponse($buildings, BuildingResource::class);
     }
 
     /**
@@ -45,7 +50,9 @@ class BuildingController extends Controller
     public function store(StoreBuildingRequest $request)
     {
         $building = $this->buildingService->createBuilding($request->validated());
-        return response()->json($building, Response::HTTP_CREATED);
+        $building->load('managementHistory.customer');
+
+        return BuildingResource::make($building)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -53,10 +60,9 @@ class BuildingController extends Controller
      *
      * Display a single building with related management information.
      */
-    public function show(Building $building): Building
+    public function show(Building $building)
     {
-        $building->load('managementHistory.customer');
-        return $building;
+        return BuildingResource::make($building->load('managementHistory.customer'));
     }
 
     /**
@@ -64,10 +70,10 @@ class BuildingController extends Controller
      *
      * Modify the provided building with validated data.
      */
-    public function update(UpdateBuildingRequest $request, Building $building): JsonResponse
+    public function update(UpdateBuildingRequest $request, Building $building)
     {
         $this->buildingService->updateBuilding($building, $request->validated());
-        return response()->json($building->fresh());
+        return BuildingResource::make($building->fresh()->load('managementHistory.customer'));
     }
 
     /**
@@ -86,9 +92,10 @@ class BuildingController extends Controller
      *
      * Retrieve notifiers available for the given building.
      */
-    public function notifiers(Building $building): Collection
+    public function notifiers(Building $building)
     {
-        return $this->buildingService->getNotifiersForBuilding($building);
+        $notifiers = $this->buildingService->getNotifiersForBuilding($building);
+        return NotifierResource::collection($notifiers);
     }
 
     /**
@@ -114,7 +121,9 @@ class BuildingController extends Controller
             $request->user()
         );
 
-        return response()->json($importJob, 201);
+        $importJob->load(['uploader', 'customer']);
+
+        return BuildingImportResource::make($importJob)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -124,6 +133,8 @@ class BuildingController extends Controller
      */
     public function reports(Request $request, Building $building)
     {
-        return $this->reportService->getAllReportsForBuilding($building, $request);
+        $reports = $this->reportService->getAllReportsForBuilding($building, $request);
+
+        return $this->paginatedResponse($reports, ReportResource::class);
     }
 }

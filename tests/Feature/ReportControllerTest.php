@@ -119,10 +119,8 @@ class ReportControllerTest extends TestCase
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', $updateData);
 
         $response->assertStatus(200)
-            ->assertJsonFragment([
-                'status_id' => $this->waitingStatus->id,
-                'sub_status_id' => $this->waitingSubStatus->id,
-            ]);
+            ->assertJsonPath('status.name', $this->waitingStatus->name)
+            ->assertJsonPath('sub_status.name', $this->waitingSubStatus->name);
 
         $this->assertDatabaseHas('reports', [
             'id' => $report->id,
@@ -296,7 +294,7 @@ class ReportControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['status_id' => $this->underAdministrationStatus->id]);
+            ->assertJsonPath('status.name', $this->underAdministrationStatus->name);
 
         $this->assertDatabaseHas('reports', [
             'id' => $report->id,

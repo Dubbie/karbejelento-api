@@ -10,6 +10,8 @@ use App\Http\Requests\Report\UpdateReportRequest;
 use App\Models\Report;
 use App\Models\Status;
 use App\Models\SubStatus;
+use App\Http\Resources\ReportAttachmentResource;
+use App\Http\Resources\ReportResource;
 use App\Services\ReportService;
 use App\Services\ReportStatusTransitionService;
 use Illuminate\Http\Request;
@@ -29,13 +31,38 @@ class ReportController extends Controller
     ) {}
 
     /**
+     * Eager load relationships used when serializing reports.
+     */
+    protected array $fullReportRelations = [
+        'building.managementHistory.customer',
+        'createdBy',
+        'notifier',
+        'attachments.uploadedBy',
+        'status',
+        'subStatus',
+        'statusHistories.user',
+        'statusHistories.status',
+        'statusHistories.subStatus',
+        'currentStatusHistory.user',
+        'currentStatusHistory.status',
+        'currentStatusHistory.subStatus',
+    ];
+
+    protected function loadFullReport(Report $report): Report
+    {
+        return $report->load($this->fullReportRelations);
+    }
+
+    /**
      * List Reports
      *
      * Return a paginated list of reports visible to the current user.
      */
     public function index(Request $request)
     {
-        return $this->reportService->getAllReportsForUser($request->user(), $request);
+        $reports = $this->reportService->getAllReportsForUser($request->user(), $request);
+
+        return $this->paginatedResponse($reports, ReportResource::class);
     }
 
     /**
@@ -46,7 +73,9 @@ class ReportController extends Controller
     public function store(StoreReportRequest $request)
     {
         $report = $this->reportService->createReport($request->validated(), $request->user());
-        return response()->json($report, Response::HTTP_CREATED);
+        $report = $this->loadFullReport($report);
+
+        return ReportResource::make($report)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -56,25 +85,7 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-        // Eager load all necessary relationships for the detail view
-        return $report->load([
-            'building.managementHistory.customer.manager',
-            'createdBy',
-            'notifier',
-            'attachments',
-            'status',
-            'subStatus',
-            'statusHistories' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-            'currentStatusHistory' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-        ]);
+        return ReportResource::make($this->loadFullReport($report));
     }
 
     /**
@@ -85,7 +96,7 @@ class ReportController extends Controller
     public function update(UpdateReportRequest $request, Report $report)
     {
         $updatedReport = $this->reportService->updateReport($report, $request->validated());
-        return response()->json($updatedReport);
+        return ReportResource::make($this->loadFullReport($updatedReport));
     }
 
     /**
@@ -120,26 +131,7 @@ class ReportController extends Controller
             $payload
         );
 
-        $updatedReport->load([
-            'building.managementHistory.customer.manager',
-            'createdBy',
-            'notifier',
-            'attachments',
-            'status',
-            'subStatus',
-            'statusHistories' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-            'currentStatusHistory' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-        ]);
-
-        return response()->json($updatedReport);
+        return ReportResource::make($this->loadFullReport($updatedReport));
     }
 
     /**
@@ -167,7 +159,11 @@ class ReportController extends Controller
             $request->user()
         );
 
-        return response()->json($attachments, Response::HTTP_CREATED);
+        $attachments->load('uploadedBy');
+
+        return ReportAttachmentResource::collection($attachments)
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -183,27 +179,9 @@ class ReportController extends Controller
             $report,
             $validated['damage_id'],
             $request->user(),
+            $validated['comment'] ?? null,
         );
 
-        $updatedReport->load([
-            'building.managementHistory.customer.manager',
-            'createdBy',
-            'notifier',
-            'attachments',
-            'status',
-            'subStatus',
-            'statusHistories' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-            'currentStatusHistory' => [
-                'user:id,uuid,name',
-                'status:id,uuid,name',
-                'subStatus:id,uuid,name',
-            ],
-        ]);
-
-        return response()->json($updatedReport);
+        return ReportResource::make($this->loadFullReport($updatedReport));
     }
 }

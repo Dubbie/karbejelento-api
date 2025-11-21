@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -190,17 +189,22 @@ class ReportService
         return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
     }
 
-    public function updateDamageId(Report $report, string $damageId, User $actor): Report
+    public function updateDamageId(Report $report, string $damageId, User $actor, ?string $comment = null): Report
     {
-        return DB::transaction(function () use ($report, $damageId, $actor) {
+        return DB::transaction(function () use ($report, $damageId, $actor, $comment) {
             $report->update([
                 'damage_id' => $damageId,
             ]);
 
-            Log::info('Damage ID updated for report ' . $report->id, [
+            $history = $report->statusHistories()->create([
+                'uuid' => (string) Str::uuid(),
                 'user_id' => $actor->id,
-                'damage_id' => $damageId,
+                'status_id' => $report->status_id,
+                'sub_status_id' => $report->sub_status_id,
+                'comment' => $comment ?? 'Damage ID updated.',
             ]);
+
+            $report->update(['current_status_history_id' => $history->id]);
 
             return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
         });

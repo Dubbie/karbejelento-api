@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
+use App\Http\Resources\UserResource;
 use App\Services\UserService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -25,10 +25,10 @@ class UserController extends Controller
      *
      * Display the authenticated user's profile.
      */
-    public function getProfile(Request $request): User
+    public function getProfile(Request $request)
     {
         // The authenticated user is available directly from the request.
-        return $request->user();
+        return UserResource::make($request->user()->load('manager'));
     }
 
     /**
@@ -38,7 +38,9 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        return $this->userService->getAllUsers($request);
+        $users = $this->userService->getAllUsers($request);
+
+        return $this->paginatedResponse($users, UserResource::class);
     }
 
     /**
@@ -46,10 +48,11 @@ class UserController extends Controller
      *
      * Store a newly created user.
      */
-    public function store(StoreUserRequest $request): JsonResponse
+    public function store(StoreUserRequest $request)
     {
         $user = $this->userService->createUser($request->validated());
-        return response()->json($user, Response::HTTP_CREATED);
+        $user->load('manager');
+        return UserResource::make($user)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -59,7 +62,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return $user;
+        return UserResource::make($user->load('manager'));
     }
 
     /**
@@ -67,10 +70,10 @@ class UserController extends Controller
      *
      * Update the specified user in storage.
      */
-    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user)
     {
         $this->userService->updateUser($user, $request->validated());
-        return response()->json($user->fresh());
+        return UserResource::make($user->fresh()->load('manager'));
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Services\ReportStatusTransitionService;
 use App\Services\ReportStatusTransitions\Rules\RequireDamageIdForUnderAdministrationRule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -40,5 +41,7 @@ class AppServiceProvider extends ServiceProvider
             // The '$this' context inside the macro is the Builder instance itself.
             return PaginationService::paginate($this, $request, $options);
         });
+
+        JsonResource::withoutWrapping();
     }
 }
