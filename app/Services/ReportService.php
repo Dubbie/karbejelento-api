@@ -110,26 +110,10 @@ class ReportService
         ]);
     }
 
-    public function updateReport(Report $report, array $data, User $actor): Report
+    public function updateReport(Report $report, array $data): Report
     {
-        $statusChangeRequested = array_key_exists('status_id', $data);
-        $subStatusProvided = array_key_exists('sub_status_id', $data);
-        $statusId = $statusChangeRequested ? (int) $data['status_id'] : null;
-        $subStatusId = $subStatusProvided ? $data['sub_status_id'] : null;
-
-        unset($data['status_id'], $data['sub_status_id']);
-
-        if ($statusChangeRequested) {
-            $this->changeReportStatus($report, $statusId, $subStatusId !== null ? (int) $subStatusId : null, [
-                'user_id' => $actor->id,
-            ]);
-        }
-
-        if (!empty($data)) {
-            $report->update($data);
-        }
-
-        return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
+        $report->update($data);
+        return $report->fresh();
     }
 
     /**

@@ -28,12 +28,6 @@ class UpdateReportRequest extends FormRequest
         $damageTypes = array_values((new \ReflectionClass(DamageType::class))->getConstants());
         $estimatedCosts = array_values((new \ReflectionClass(EstimatedCost::class))->getConstants());
         $claimantTypes = array_values((new \ReflectionClass(ClaimantType::class))->getConstants());
-        $statusId = $this->input('status_id');
-        $subStatusRule = Rule::exists('sub_statuses', 'id');
-
-        if ($statusId) {
-            $subStatusRule->where('status_id', $statusId);
-        }
 
         // Get the Report model that has been resolved by Route Model Binding
         $report = $this->route('report');
@@ -57,8 +51,6 @@ class UpdateReportRequest extends FormRequest
             'damaged_building_number' => ['sometimes', 'string', 'max:255'],
             'damaged_floor' => ['sometimes', 'string', 'max:255'],
             'damaged_unit_or_door' => ['nullable', 'string', 'max:255'],
-            'status_id' => ['sometimes', 'integer', 'exists:statuses,id', 'required_with:sub_status_id'],
-            'sub_status_id' => ['sometimes', 'nullable', 'integer', $subStatusRule],
         ];
     }
 }

@@ -3,16 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\ChangeStatusRequest;
 use App\Http\Requests\Report\StoreReportRequest;
 use App\Http\Requests\Report\UpdateReportRequest;
 use App\Models\Report;
+use App\Models\Status;
+use App\Models\SubStatus;
 use App\Services\ReportService;
+use App\Services\ReportStatusTransitionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ReportController extends Controller
 {
-    public function __construct(protected ReportService $reportService) {}
+    public function __construct(
+        protected ReportService $reportService,
+        protected ReportStatusTransitionService $transitionService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -36,19 +43,38 @@ class ReportController extends Controller
             'status',
             'subStatus',
             'statusHistories' => [
-                'user:id,name',
-                'status:id,name',
-                'subStatus:id,name',
+                'user:id,uuid,name',
+                'status:id,uuid,name',
+                'subStatus:id,uuid,name',
             ],
             'currentStatusHistory' => [
-                'user:id,name',
+                'user:id,uuid,name',
+                'status:id,uuid,name',
+                'subStatus:id,uuid,name',
             ],
         ]);
     }
 
     public function update(UpdateReportRequest $request, Report $report)
     {
-        $updatedReport = $this->reportService->updateReport($report, $request->validated(), $request->user());
+        $updatedReport = $this->reportService->updateReport($report, $request->validated());
+        return response()->json($updatedReport);
+    }
+
+    public function changeStatus(ChangeStatusRequest $request, Report $report)
+    {
+        $status = Status::findOrFail($request->input('status_id'));
+        $subStatusId = $request->input('sub_status_id');
+        $subStatus = $subStatusId ? SubStatus::findOrFail($subStatusId) : null;
+
+        $updatedReport = $this->transitionService->transition(
+            $report,
+            $status,
+            $subStatus,
+            $request->user(),
+            $request->validated()
+        );
+
         return response()->json($updatedReport);
     }
 

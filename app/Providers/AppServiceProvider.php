@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Services\PaginationService;
+use App\Services\ReportService;
+use App\Services\ReportStatusTransitionService;
+use App\Services\ReportStatusTransitions\Rules\RequireDamageIdForUnderAdministrationRule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
@@ -14,7 +17,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ReportStatusTransitionService::class, function ($app) {
+            return new ReportStatusTransitionService(
+                $app->make(ReportService::class),
+                [
+                    $app->make(RequireDamageIdForUnderAdministrationRule::class),
+                ]
+            );
+        });
     }
 
     /**

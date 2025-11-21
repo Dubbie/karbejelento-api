@@ -81,6 +81,8 @@ Route::prefix('v1')->group(function () {
 
             // This route is protected by sanctum, but has no specific role middleware
             Route::post('/{report}/attachments', 'uploadAttachments');
+            Route::post('/{report}/status', 'changeStatus')
+                ->middleware('role:' . UserRole::ADMIN . ',' . UserRole::DAMAGE_SOLVER . ',' . UserRole::MANAGER);
         });
     });
 });

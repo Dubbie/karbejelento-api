@@ -30,6 +30,7 @@ class ReportControllerTest extends TestCase
     private Status $defaultStatus;
     private Status $waitingStatus;
     private SubStatus $waitingSubStatus;
+    private Status $underAdministrationStatus;
 
     /**
      * Set up the common actors for all tests.
@@ -102,7 +103,7 @@ class ReportControllerTest extends TestCase
             ->assertJsonFragment(['uuid' => $report->uuid]);
     }
 
-    public function test_manager_can_update_a_report(): void
+    public function test_manager_can_change_report_status(): void
     {
         $report = Report::factory()->create([
             'building_id' => $this->building->id,
@@ -115,7 +116,7 @@ class ReportControllerTest extends TestCase
             'status_id' => $this->waitingStatus->id,
             'sub_status_id' => $this->waitingSubStatus->id,
         ];
-        $response = $this->patchJson('/api/v1/reports/' . $report->uuid, $updateData);
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', $updateData);
 
         $response->assertStatus(200)
             ->assertJsonFragment([
@@ -140,7 +141,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->create(['building_id' => $this->building->id]);
         Sanctum::actingAs($this->customer);
 
-        $response = $this->patchJson('/api/v1/reports/' . $report->uuid, [
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
             'status_id' => $this->waitingStatus->id,
         ]);
 
@@ -251,6 +252,61 @@ class ReportControllerTest extends TestCase
                     'name' => 'Awaiting insurer follow-up',
                 ]);
             }
+
+            if ($name === ReportStatus::UNDER_INSURER_ADMINISTRATION) {
+                $this->underAdministrationStatus = $status;
+            }
         }
+    }
+
+    public function test_transition_to_under_insurer_requires_damage_id_when_coming_from_reported(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+            'damage_id' => null,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status_id' => $this->underAdministrationStatus->id,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['damage_id']);
+    }
+
+    public function test_transition_to_under_insurer_updates_damage_id_when_provided(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+            'damage_id' => null,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status_id' => $this->underAdministrationStatus->id,
+            'damage_id' => 'DMG-123',
+            'comment' => 'Insurer confirmed receipt',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['status_id' => $this->underAdministrationStatus->id]);
+
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status_id' => $this->underAdministrationStatus->id,
+            'damage_id' => 'DMG-123',
+        ]);
+        $this->assertDatabaseHas('report_status_histories', [
+            'report_id' => $report->id,
+            'status_id' => $this->underAdministrationStatus->id,
+            'comment' => 'Insurer confirmed receipt',
+        ]);
     }
 }
