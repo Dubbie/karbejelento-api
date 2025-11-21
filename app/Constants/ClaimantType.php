@@ -4,6 +4,14 @@ namespace App\Constants;
 
 final class ClaimantType
 {
-    public const BUILDING = 'building';
-    public const RESIDENT = 'resident';
+    const BUILDING = 'building';
+    const RESIDENT = 'resident';
+
+    public static function all(): array
+    {
+        return [
+            self::BUILDING,
+            self::RESIDENT,
+        ];
+    }
 }

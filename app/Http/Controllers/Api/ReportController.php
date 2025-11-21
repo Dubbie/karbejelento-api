@@ -48,7 +48,7 @@ class ReportController extends Controller
 
     public function update(UpdateReportRequest $request, Report $report)
     {
-        $updatedReport = $this->reportService->updateReport($report, $request->validated());
+        $updatedReport = $this->reportService->updateReport($report, $request->validated(), $request->user());
         return response()->json($updatedReport);
     }
 

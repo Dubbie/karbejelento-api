@@ -9,8 +9,9 @@ use App\Models\BuildingManagement;
 use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\ReportAttachment;
+use App\Models\Status;
+use App\Models\SubStatus;
 use App\Models\User;
-use Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -26,6 +27,9 @@ class ReportControllerTest extends TestCase
     private User $customer;
     private Building $building;
     private Notifier $notifier;
+    private Status $defaultStatus;
+    private Status $waitingStatus;
+    private SubStatus $waitingSubStatus;
 
     /**
      * Set up the common actors for all tests.
@@ -33,6 +37,8 @@ class ReportControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->seedStatusHierarchy();
 
         // Create a hierarchy: Admin, Manager, and a Customer managed by the Manager
         $this->admin = User::factory()->admin()->create();
@@ -55,9 +61,9 @@ class ReportControllerTest extends TestCase
         Sanctum::actingAs($this->customer);
 
         $reportData = [
-            'building_id' => $this->building->id,
-            'notifier_id' => $this->notifier->id,
-            'damage_type' => DamageType::ROOF_LEAK,
+            'building_uuid' => $this->building->uuid,
+            'notifier_uuid' => $this->notifier->uuid,
+            'damage_type' => DamageType::ROOF_STEEP,
             'estimated_cost' => '501-2000',
             'damage_description' => 'Water is leaking from the ceiling.',
             'damage_date' => '2025-08-20',
@@ -74,8 +80,15 @@ class ReportControllerTest extends TestCase
             ->assertJsonFragment(['damage_description' => 'Water is leaking from the ceiling.']);
 
         // Assert that the report AND its initial status history were created
-        $this->assertDatabaseHas('reports', ['building_id' => $this->building->id]);
-        $this->assertDatabaseHas('report_status_history', ['status' => ReportStatus::NEW]);
+        $report = Report::first();
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+        $this->assertDatabaseHas('report_status_histories', [
+            'report_id' => $report->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
     }
 
     public function test_user_can_view_a_specific_report(): void
@@ -91,16 +104,35 @@ class ReportControllerTest extends TestCase
 
     public function test_manager_can_update_a_report(): void
     {
-        $report = Report::factory()->create(['building_id' => $this->building->id]);
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+        ]);
         Sanctum::actingAs($this->manager);
 
-        $updateData = ['current_status' => ReportStatus::IN_PROGRESS];
+        $updateData = [
+            'status_id' => $this->waitingStatus->id,
+            'sub_status_id' => $this->waitingSubStatus->id,
+        ];
         $response = $this->patchJson('/api/v1/reports/' . $report->uuid, $updateData);
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['current_status' => ReportStatus::IN_PROGRESS]);
+            ->assertJsonFragment([
+                'status_id' => $this->waitingStatus->id,
+                'sub_status_id' => $this->waitingSubStatus->id,
+            ]);
 
-        $this->assertDatabaseHas('reports', ['id' => $report->id, 'current_status' => ReportStatus::IN_PROGRESS]);
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status_id' => $this->waitingStatus->id,
+            'sub_status_id' => $this->waitingSubStatus->id,
+        ]);
+        $this->assertDatabaseHas('report_status_histories', [
+            'report_id' => $report->id,
+            'status_id' => $this->waitingStatus->id,
+            'sub_status_id' => $this->waitingSubStatus->id,
+        ]);
     }
 
     public function test_customer_cannot_update_a_report(): void
@@ -108,7 +140,9 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->create(['building_id' => $this->building->id]);
         Sanctum::actingAs($this->customer);
 
-        $response = $this->patchJson('/api/v1/reports/' . $report->uuid, ['current_status' => ReportStatus::IN_PROGRESS]);
+        $response = $this->patchJson('/api/v1/reports/' . $report->uuid, [
+            'status_id' => $this->waitingStatus->id,
+        ]);
 
         // Customers are not in the allowed role list for updating
         $response->assertStatus(403);
@@ -196,5 +230,27 @@ class ReportControllerTest extends TestCase
         // Assert: The manager should see the 2 reports from their customers, but not the 3rd.
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data');
+    }
+    private function seedStatusHierarchy(): void
+    {
+        $order = 1;
+        foreach (ReportStatus::all() as $name) {
+            $status = Status::factory()->create([
+                'name' => $name,
+                'order_column' => $order++,
+            ]);
+
+            if ($name === ReportStatus::REPORTED_TO_DAMARISK) {
+                $this->defaultStatus = $status;
+            }
+
+            if ($name === ReportStatus::WAITING_FOR_INSURER_DAMAGE_ID) {
+                $this->waitingStatus = $status;
+                $this->waitingSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => 'Awaiting insurer follow-up',
+                ]);
+            }
+        }
     }
 }

@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ReportService
 {
@@ -35,31 +36,21 @@ class ReportService
         unset($data['building_uuid'], $data['notifier_uuid']);
 
         return DB::transaction(function () use ($data, $user, $building, $notifier, $defaultStatus) {
-            // Create the report
             $report = Report::create(array_merge($data, [
                 'uuid' => Str::uuid(),
                 'created_by_user_id' => $user->id,
                 'building_id' => $building->id,
                 'notifier_id' => $notifier->id,
                 'status_id' => $defaultStatus->id,
+                'sub_status_id' => null,
                 'bond_number' => $building->bond_number, // Snapshot data
                 'insurer' => $building->insurer,
             ]));
 
-            // Create the default status history
-            $statusHistory = $report->statusHistories()->create([
-                'uuid' => Str::uuid(),
-                'user_id' => $options['user_id'] ?? Auth::id(),
-                'status_id' => $defaultStatus->id,
-                'sub_status_id' => null,
+            $report = $this->changeReportStatus($report, $defaultStatus->id, null, [
+                'user_id' => $user->id,
+                'comment' => 'Report created.',
             ]);
-
-            // Update the report's current status
-            $report->current_status_history_id = $statusHistory->id;
-            $report->save();
-
-            // Refresh the report so it has everything
-            $report->refresh();
 
             return $report;
         });
@@ -78,7 +69,7 @@ class ReportService
             });
         }
         if ($statuses = $request->input('statuses')) {
-            $statuses = explode(',', $statuses);
+            $statuses = is_array($statuses) ? $statuses : explode(',', $statuses);
             $query->whereHas('status', fn($q) => $q->whereIn('name', $statuses));
         }
         if ($dateFrom = $request->input('dateFrom')) {
@@ -105,7 +96,8 @@ class ReportService
             });
         }
         if ($statuses = $request->input('statuses')) {
-            $query->whereIn('current_status', is_array($statuses) ? $statuses : [$statuses]);
+            $statuses = is_array($statuses) ? $statuses : explode(',', $statuses);
+            $query->whereHas('status', fn($q) => $q->whereIn('name', $statuses));
         }
         if ($dateFrom = $request->input('dateFrom')) {
             $query->where('created_at', '>=', $dateFrom);
@@ -118,10 +110,26 @@ class ReportService
         ]);
     }
 
-    public function updateReport(Report $report, array $data): Report
+    public function updateReport(Report $report, array $data, User $actor): Report
     {
-        $report->update($data);
-        return $report->fresh();
+        $statusChangeRequested = array_key_exists('status_id', $data);
+        $subStatusProvided = array_key_exists('sub_status_id', $data);
+        $statusId = $statusChangeRequested ? (int) $data['status_id'] : null;
+        $subStatusId = $subStatusProvided ? $data['sub_status_id'] : null;
+
+        unset($data['status_id'], $data['sub_status_id']);
+
+        if ($statusChangeRequested) {
+            $this->changeReportStatus($report, $statusId, $subStatusId !== null ? (int) $subStatusId : null, [
+                'user_id' => $actor->id,
+            ]);
+        }
+
+        if (!empty($data)) {
+            $report->update($data);
+        }
+
+        return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
     }
 
     /**
@@ -162,66 +170,38 @@ class ReportService
      */
     public function changeReportStatus(Report $report, int $statusId, ?int $subStatusId, array $options = []): Report
     {
-        // Use a transaction to ensure all database operations succeed or none do.
-        DB::transaction(function () use ($report, $statusId, $subStatusId, $options) {
+        $status = Status::with('subStatuses')->findOrFail($statusId);
+        $subStatus = null;
+
+        if ($subStatusId !== null) {
+            $subStatus = $status->subStatuses->firstWhere('id', $subStatusId);
+
+            if (!$subStatus) {
+                throw ValidationException::withMessages([
+                    'sub_status_id' => ['The provided sub-status does not belong to the selected status.'],
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($report, $status, $subStatus, $options) {
             $comment = $options['comment'] ?? null;
+            $comment = $comment !== null ? trim((string) $comment) : null;
 
-            // if (isset($options['missing_inspection_data'])) {
-            //     $missingData = $options['missing_inspection_data'];
-            //     if ($missingData['action'] === 'update_contact') {
-            //         // Log the change and update the report's inspector phone.
-            //         $oldPhone = $report->inspector_phone;
-            //         $comment .= "\n[Rendszer] Elérhetőség frissítve. Régi: {$oldPhone}, Új: {$missingData['new_contact_info']}";
-            //         $report->update(['inspector_phone' => $missingData['new_contact_info']]);
-            //     }
-            // }
-
-            // Step 1: Create the history record with the potentially modified comment.
             $history = $report->statusHistories()->create([
+                'uuid' => (string) Str::uuid(),
                 'user_id' => $options['user_id'] ?? Auth::id(),
-                'status_id' => $statusId,
-                'sub_status_id' => $subStatusId,
-                'comment' => trim($comment),
+                'status_id' => $status->id,
+                'sub_status_id' => $subStatus?->id,
+                'comment' => $comment,
             ]);
 
-            // Step 2: Update the report's main record.
             $report->update([
-                'status_id' => $history->status_id,
-                'sub_status_id' => $history->sub_status_id,
+                'status_id' => $status->id,
+                'sub_status_id' => $subStatus?->id,
                 'current_status_history_id' => $history->id,
             ]);
-
-            // if (isset($options['inspection_data'])) {
-            //     $report->onSiteInspection()->updateOrCreate(
-            //         ['report_id' => $report->id],
-            //         $options['inspection_data']
-            //     );
-            // }
-
-            // Step 3: Update the report's attachments.
-            if (!empty($options['attachments'])) {
-                /** @var FileService $fs */
-                $fs = resolve('App\Services\FileService');
-                $attachmentBatch = [];
-                foreach ($options['attachments'] as $attachment) {
-                    $file = $fs->createFile($attachment, 'report/' . $report->id . '/status_attachments/', Auth::id());
-                    $attachmentBatch[] = ['file_id' => $file->id, 'category' => 'other'];
-                }
-                $report->attachments()->createMany($attachmentBatch);
-            }
         });
 
-        // Refresh the report model to ensure all relations are up-to-date.
-        $report->refresh();
-
-        // Step 4: Handle Notifications.
-        // Check if the new status is a "Closed" status.
-        // if ($report->status->name === ReportStatus::CLOSED) {
-        //     $this->mailService->sendReportClosedMails($report);
-        // } else {
-        //     $this->mailService->sendReportStatusChangedMails($report);
-        // }
-
-        return $report;
+        return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
     }
 }

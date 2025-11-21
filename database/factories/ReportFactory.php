@@ -5,11 +5,11 @@ namespace Database\Factories;
 use App\Constants\ClaimantType;
 use App\Constants\DamageType;
 use App\Constants\EstimatedCost;
-use App\Constants\ReportStatus;
 use App\Models\Building;
 use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\User;
+use Database\Factories\Concerns\ResolvesStatuses;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ReportFactory extends Factory
 {
+    use ResolvesStatuses;
+
     /**
      * The name of the factory's corresponding model.
      *
@@ -32,10 +34,10 @@ class ReportFactory extends Factory
     public function definition(): array
     {
         // Dynamically get constants to use in faker->randomElement
-        $damageTypes = (new \ReflectionClass(DamageType::class))->getConstants();
-        $estimatedCosts = (new \ReflectionClass(EstimatedCost::class))->getConstants();
-        $reportStatuses = (new \ReflectionClass(ReportStatus::class))->getConstants();
-        $claimantTypes = (new \ReflectionClass(ClaimantType::class))->getConstants();
+        $estimatedCosts = EstimatedCost::all();
+        $claimantTypes = ClaimantType::all();
+        $damageTypes = DamageType::all();
+        [$status, $subStatus] = $this->randomStatusWithOptionalSubStatus();
 
         return [
             'uuid' => $this->faker->uuid(),
@@ -53,7 +55,6 @@ class ReportFactory extends Factory
             'damaged_unit_or_door' => $this->faker->bothify('Unit ##??'),
             'damage_date' => $this->faker->dateTimeThisMonth(),
             'estimated_cost' => $this->faker->randomElement($estimatedCosts),
-            'current_status' => $this->faker->randomElement($reportStatuses),
             'claimant_type' => $this->faker->randomElement($claimantTypes),
             'claimant_name' => $this->faker->name(),
             'claimant_email' => $this->faker->safeEmail(),
@@ -61,6 +62,8 @@ class ReportFactory extends Factory
             'contact_name' => $this->faker->name(),
             'contact_phone_number' => $this->faker->phoneNumber(),
             'claimant_account_number' => $this->faker->bankAccountNumber(),
+            'status_id' => $status->id,
+            'sub_status_id' => $subStatus?->id,
         ];
     }
 }

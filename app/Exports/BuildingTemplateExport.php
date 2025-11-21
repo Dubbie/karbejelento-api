@@ -24,7 +24,7 @@ class BuildingTemplateExport extends DefaultValueBinder implements FromCollectio
 
     public function __construct(protected BuildingService $buildingService)
     {
-        $this->streetTypes = array_values((new ReflectionClass(StreetType::class))->getConstants());
+        $this->streetTypes = StreetType::all();
     }
 
     /**
