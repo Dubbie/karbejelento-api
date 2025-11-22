@@ -102,6 +102,9 @@ jobs:
           # Get the new tag name created by cz bump
           echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
 
+          # Get the new sha for the tag
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Push changes back to repo
         run: git push --follow-tags
 
