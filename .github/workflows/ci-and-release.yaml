@@ -1,9 +1,10 @@
-name: Release
+name: CI & Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, develop] # Run on pushes to BOTH main and develop
+  pull_request:
+    branches: [main, develop] # Run when PRs are opened against these branches
 
 jobs:
   laravel-tests:
