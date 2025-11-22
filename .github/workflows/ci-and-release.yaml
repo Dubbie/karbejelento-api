@@ -108,4 +108,4 @@ jobs:
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create ${{ steps.cz.outputs.tag }} --notes "See CHANGELOG.md for release notes."
+        run: gh release create ${{ steps.cz.outputs.tag }} --target ${{ steps.cz.outputs.sha }} --notes "See CHANGELOG.md for release notes."
