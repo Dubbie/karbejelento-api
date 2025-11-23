@@ -1,3 +1,9 @@
+## v0.2.0 (2025-11-23)
+
+### Feat
+
+- **docs**: add version to config
+
 ## v0.1.1 (2025-11-22)
 
 ### Fix
