@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Constants\UserRole;
 use App\Models\Building;
+use App\Models\Insurer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -117,11 +118,13 @@ class BuildingImportControllerTest extends TestCase
         Sanctum::actingAs($this->admin);
         Storage::fake('local'); // Use a fake disk to prevent actual file storage
 
+        $insurer = Insurer::factory()->create(['name' => 'Allianz']);
+
         // Create a real CSV file content as a string
         $header = 'Társasház neve,Irányítószám,Város,Közterület neve,Közterület tipusa,Házszám,Bankszámlaszám,Kötvényszám,Biztosító';
-        $row1 = '"TH Teszt 1","1225","Budapest","Hamis","utca","1","00000000-10000000-00000000","BOND-01","Allianz"';
-        $row2 = '"TH Teszt 2","1225","Budapest","Hamis","utca","2","00000000-20000000-00000000","BOND-02","Allianz"';
-        $row_invalid = '"","1225","Budapest","Helytelen","utca","2","00000000-30000000-00000000","BOND-03","Allianz"';
+        $row1 = "\"TH Teszt 1\",\"1225\",\"Budapest\",\"Hamis\",\"utca\",\"1\",\"00000000-10000000-00000000\",\"BOND-01\",\"{$insurer->name}\"";
+        $row2 = "\"TH Teszt 2\",\"1225\",\"Budapest\",\"Hamis\",\"utca\",\"2\",\"00000000-20000000-00000000\",\"BOND-02\",\"{$insurer->name}\"";
+        $row_invalid = "\"\",\"1225\",\"Budapest\",\"Helytelen\",\"utca\",\"2\",\"00000000-30000000-00000000\",\"BOND-03\",\"{$insurer->name}\"";
 
         $content = implode("\n", [$header, $row1, $row2, $row_invalid]);
 

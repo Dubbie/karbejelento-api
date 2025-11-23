@@ -25,7 +25,11 @@ class ModelRelationshipTest extends TestCase
         Notifier::factory()->create(['customer_id' => $customer->id]);
 
         $building = Building::factory()->create();
-        BuildingManagement::factory()->create(['customer_id' => $customer->id, 'building_id' => $building->id]);
+        BuildingManagement::factory()->create([
+            'customer_id' => $customer->id,
+            'building_id' => $building->id,
+            'insurer_id' => $building->insurer_id,
+        ]);
 
         // Assert the relationships exist and return the correct type
         $this->assertTrue($customer->manager->is($manager));
@@ -42,6 +46,7 @@ class ModelRelationshipTest extends TestCase
         $management = BuildingManagement::factory()->create([
             'customer_id' => $customer->id,
             'building_id' => $building->id,
+            'insurer_id' => $building->insurer_id,
         ]);
 
         $this->assertTrue($management->customer->is($customer));

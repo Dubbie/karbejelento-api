@@ -8,6 +8,7 @@ use App\Imports\BuildingsImport;
 use App\Models\Building;
 use App\Models\BuildingImport;
 use App\Models\BuildingManagement;
+use App\Models\Insurer;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -27,16 +28,21 @@ class BuildingService
     public function createBuilding(array $data): Building
     {
         $customerId = $data['customer_id'];
-        unset($data['customer_id']); // Remove it from building data
+        $insurerUuid = $data['insurer_uuid'];
+        unset($data['customer_id'], $data['insurer_uuid']);
 
-        return DB::transaction(function () use ($data, $customerId) {
-            // 1. Create the building
-            $building = Building::create(array_merge($data, ['uuid' => Str::uuid()]));
+        $insurer = Insurer::where('uuid', $insurerUuid)->firstOrFail();
 
-            // 2. Create the initial management record
+        return DB::transaction(function () use ($data, $customerId, $insurer) {
+            $building = Building::create(array_merge($data, [
+                'uuid' => Str::uuid(),
+                'insurer_id' => $insurer->id,
+            ]));
+
             BuildingManagement::create([
                 'building_id' => $building->id,
                 'customer_id' => $customerId,
+                'insurer_id' => $insurer->id,
                 'start_date' => now(),
             ]);
 
@@ -49,11 +55,25 @@ class BuildingService
      */
     public function getAllBuildings(User $user, Request $request): array
     {
-        $query = Building::forUser($user);
+        $query = Building::forUser($user)
+            ->with('insurer');
+
+        $query->leftJoin('insurers', 'buildings.insurer_id', '=', 'insurers.id')
+            ->select('buildings.*');
 
         return $query->advancedPaginate($request, [
-            'sortableFields' => ['name', 'city', 'postcode'],
-            'filterableFields' => ['name', 'city', 'postcode', 'insurer'],
+            'sortableFields' => [
+                'name' => 'buildings.name',
+                'city' => 'buildings.city',
+                'postcode' => 'buildings.postcode',
+                'insurer' => 'insurers.name',
+            ],
+            'filterableFields' => [
+                'name' => 'buildings.name',
+                'city' => 'buildings.city',
+                'postcode' => 'buildings.postcode',
+                'insurer' => 'insurers.name',
+            ],
         ]);
     }
 
@@ -62,6 +82,16 @@ class BuildingService
      */
     public function updateBuilding(Building $building, array $data): bool
     {
+        if (isset($data['insurer_uuid'])) {
+            $insurer = Insurer::where('uuid', $data['insurer_uuid'])->firstOrFail();
+            $data['insurer_id'] = $insurer->id;
+            unset($data['insurer_uuid']);
+
+            $building->managementHistory()
+                ->whereNull('end_date')
+                ->update(['insurer_id' => $insurer->id]);
+        }
+
         return $building->update($data);
     }
 

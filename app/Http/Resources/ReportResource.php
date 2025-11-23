@@ -40,6 +40,7 @@ class ReportResource extends JsonResource
             'sub_status' => $this->whenLoaded('subStatus', fn () => SubStatusResource::make($this->subStatus)),
             'building' => $this->whenLoaded('building', fn () => BuildingResource::make($this->building)),
             'notifier' => $this->whenLoaded('notifier', fn () => NotifierResource::make($this->notifier)),
+            'insurer' => $this->whenLoaded('insurer', fn () => InsurerResource::make($this->insurer)),
             'created_by' => $this->whenLoaded('createdBy', fn () => UserResource::make($this->createdBy)),
             'attachments' => $this->whenLoaded('attachments', function () {
                 return ReportAttachmentResource::collection($this->attachments);

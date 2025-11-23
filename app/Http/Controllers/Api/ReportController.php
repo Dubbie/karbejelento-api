@@ -34,7 +34,9 @@ class ReportController extends Controller
      * Eager load relationships used when serializing reports.
      */
     protected array $fullReportRelations = [
+        'building.insurer',
         'building.managementHistory.customer.manager',
+        'building.managementHistory.insurer',
         'createdBy',
         'notifier',
         'attachments.uploadedBy',
@@ -46,6 +48,7 @@ class ReportController extends Controller
         'currentStatusHistory.user',
         'currentStatusHistory.status',
         'currentStatusHistory.subStatus',
+        'insurer',
     ];
 
     protected function loadFullReport(Report $report): Report

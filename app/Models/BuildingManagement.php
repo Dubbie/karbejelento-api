@@ -33,6 +33,7 @@ class BuildingManagement extends Model
         'end_date',
         'building_id',
         'customer_id',
+        'insurer_id',
     ];
 
     /**
@@ -68,5 +69,13 @@ class BuildingManagement extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    /**
+     * The insurer active for this management window.
+     */
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class);
     }
 }

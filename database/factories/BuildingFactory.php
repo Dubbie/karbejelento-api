@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Constants\StreetType;
 use App\Models\Building;
+use App\Models\Insurer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -37,7 +38,7 @@ class BuildingFactory extends Factory
             'street_number' => $this->faker->buildingNumber(),
             'bond_number' => $this->faker->unique()->numerify('BOND-########'),
             'account_number' => $this->faker->iban(),
-            'insurer' => $this->faker->company(),
+            'insurer_id' => Insurer::factory(),
             'is_archived' => false,
         ];
     }

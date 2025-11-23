@@ -32,7 +32,7 @@ class StoreBuildingRequest extends FormRequest
             'street_type' => ['nullable', 'string', Rule::in(array_values((new \ReflectionClass(StreetType::class))->getConstants()))],
             'bond_number' => ['required', 'string', 'unique:buildings,bond_number'],
             'account_number' => ['required', 'string'],
-            'insurer' => ['required', 'string'],
+            'insurer_uuid' => ['required', 'uuid', 'exists:insurers,uuid'],
             'customer_id' => ['required', 'integer', 'exists:users,id'],
         ];
     }

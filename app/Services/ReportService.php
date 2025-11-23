@@ -29,6 +29,10 @@ class ReportService
             throw new \InvalidArgumentException('Invalid building UUID.');
         }
 
+        if (!$building->insurer_id) {
+            throw new \InvalidArgumentException('Building is missing an insurer reference.');
+        }
+
         if (!$notifier) {
             throw new \InvalidArgumentException('Invalid notifier UUID.');
         }
@@ -44,7 +48,7 @@ class ReportService
                 'status_id' => $defaultStatus->id,
                 'sub_status_id' => null,
                 'bond_number' => $building->bond_number, // Snapshot data
-                'insurer' => $building->insurer,
+                'insurer_id' => $building->insurer_id,
             ]));
 
             $report = $this->changeReportStatus($report, $defaultStatus->id, null, [
@@ -59,7 +63,7 @@ class ReportService
     public function getAllReportsForUser(User $user, Request $request): array
     {
         $query = Report::forUser($user)
-            ->with(['building', 'notifier', 'status', 'subStatus']); // Eager load relationships
+            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer']); // Eager load relationships
 
         // -- Apply Filters --
         if ($search = $request->input('searchQuery')) {
@@ -86,7 +90,7 @@ class ReportService
     public function getAllReportsForBuilding(Building $building, Request $request): array
     {
         $query = Report::forBuilding($building)
-            ->with(['building', 'notifier', 'status', 'subStatus']); // Eager load relationships
+            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer']); // Eager load relationships
 
         // -- Apply Filters --
         if ($search = $request->input('searchQuery')) {

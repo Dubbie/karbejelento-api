@@ -16,7 +16,10 @@ class BuildingResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'bond_number' => $this->bond_number,
-            'insurer' => $this->insurer,
+            'insurer' => $this->when(
+                $this->insurer,
+                fn () => InsurerResource::make($this->insurer)
+            ),
             'city' => $this->city,
             'postcode' => $this->postcode,
             'street' => [
@@ -29,6 +32,10 @@ class BuildingResource extends JsonResource
             'current_customer' => $this->when(
                 $this->current_customer,
                 fn () => UserResource::make($this->current_customer)
+            ),
+            'current_insurer' => $this->when(
+                $this->current_insurer,
+                fn () => InsurerResource::make($this->current_insurer)
             ),
             'management_history' => $this->whenLoaded('managementHistory', function () {
                 return BuildingManagementResource::collection($this->managementHistory);

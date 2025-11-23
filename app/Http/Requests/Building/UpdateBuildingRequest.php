@@ -34,7 +34,7 @@ class UpdateBuildingRequest extends FormRequest
             'street_type' => ['nullable', 'string', Rule::in(array_values((new \ReflectionClass(StreetType::class))->getConstants()))],
             'bond_number' => ['sometimes', 'string', Rule::unique('buildings', 'bond_number')->ignore($building)],
             'account_number' => ['sometimes', 'string'],
-            'insurer' => ['sometimes', 'string'],
+            'insurer_uuid' => ['sometimes', 'uuid', 'exists:insurers,uuid'],
             'customer_id' => ['sometimes', 'integer', 'exists:users,id'],
         ];
     }

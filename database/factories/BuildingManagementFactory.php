@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Building;
 use App\Models\BuildingManagement;
+use App\Models\Insurer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,6 +30,7 @@ class BuildingManagementFactory extends Factory
         return [
             'building_id' => Building::factory(),
             'customer_id' => User::factory()->customer(), // Ensure the user is a customer
+            'insurer_id' => Insurer::factory(),
             'start_date' => $this->faker->dateTimeThisYear(),
             'end_date' => null,
         ];

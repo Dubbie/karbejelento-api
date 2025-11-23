@@ -16,6 +16,7 @@ class BuildingManagementResource extends JsonResource
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'customer' => $this->whenLoaded('customer', fn () => UserResource::make($this->customer)),
+            'insurer' => $this->whenLoaded('insurer', fn () => InsurerResource::make($this->insurer)),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Building;
+use App\Models\Insurer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -29,12 +30,14 @@ class BuildingControllerTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $customer = User::factory()->customer()->create();
+        $insurer = Insurer::factory()->create();
 
         Sanctum::actingAs($admin);
 
-        $buildingData = Building::factory()->make([
-            'customer_id' => $customer->id, // Add the customer_id for the management record
-        ])->toArray();
+        $buildingData = Building::factory()->make()->toArray();
+        unset($buildingData['insurer_id']);
+        $buildingData['customer_id'] = $customer->id;
+        $buildingData['insurer_uuid'] = $insurer->uuid;
 
         $response = $this->postJson('/api/v1/buildings', $buildingData);
 
@@ -50,9 +53,13 @@ class BuildingControllerTest extends TestCase
     public function test_customer_cannot_create_a_building(): void
     {
         $customer = User::factory()->customer()->create();
+        $insurer = Insurer::factory()->create();
         Sanctum::actingAs($customer);
 
-        $buildingData = Building::factory()->make(['customer_id' => $customer->id])->toArray();
+        $buildingData = Building::factory()->make()->toArray();
+        unset($buildingData['insurer_id']);
+        $buildingData['customer_id'] = $customer->id;
+        $buildingData['insurer_uuid'] = $insurer->uuid;
 
         $response = $this->postJson('/api/v1/buildings', $buildingData);
 

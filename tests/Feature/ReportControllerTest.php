@@ -51,6 +51,7 @@ class ReportControllerTest extends TestCase
         BuildingManagement::factory()->create([
             'building_id' => $this->building->id,
             'customer_id' => $this->customer->id,
+            'insurer_id' => $this->building->insurer_id,
         ]);
 
         // Create a notifier for the customer
@@ -193,6 +194,7 @@ class ReportControllerTest extends TestCase
         BuildingManagement::factory()->create([
             'building_id' => $otherBuilding->id,
             'customer_id' => $otherCustomer->id,
+            'insurer_id' => $otherBuilding->insurer_id,
         ]);
         Report::factory()->create(['building_id' => $otherBuilding->id]);
 
@@ -216,6 +218,7 @@ class ReportControllerTest extends TestCase
         BuildingManagement::factory()->create([
             'building_id' => $building2->id,
             'customer_id' => $customer2->id,
+            'insurer_id' => $building2->insurer_id,
         ]);
         Report::factory()->create(['building_id' => $building2->id]);
 

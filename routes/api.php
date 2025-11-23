@@ -2,9 +2,10 @@
 
 use App\Constants\UserRole;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BuildingController;
+use App\Http\Controllers\Api\InsurerController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -66,6 +67,19 @@ Route::prefix('v1')->group(function () {
             Route::post('/', 'store')->middleware($adminAndSolver);
             Route::patch('/{building}', 'update')->middleware($adminManagerSolver);
             Route::delete('/{building}', 'destroy')->middleware($adminOnly);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Insurer Routes
+        |--------------------------------------------------------------------------
+        */
+        Route::controller(InsurerController::class)->prefix('insurers')->group(function () use ($adminAndSolver) {
+            Route::get('/', 'index');
+            Route::get('/{insurer}', 'show');
+            Route::post('/', 'store')->middleware($adminAndSolver);
+            Route::patch('/{insurer}', 'update')->middleware($adminAndSolver);
+            Route::delete('/{insurer}', 'destroy')->middleware($adminAndSolver);
         });
 
         /*

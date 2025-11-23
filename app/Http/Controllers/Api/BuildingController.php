@@ -50,7 +50,7 @@ class BuildingController extends Controller
     public function store(StoreBuildingRequest $request)
     {
         $building = $this->buildingService->createBuilding($request->validated());
-        $building->load('managementHistory.customer');
+        $building->load('insurer', 'managementHistory.customer', 'managementHistory.insurer');
 
         return BuildingResource::make($building)->response()->setStatusCode(Response::HTTP_CREATED);
     }
@@ -62,7 +62,7 @@ class BuildingController extends Controller
      */
     public function show(Building $building)
     {
-        return BuildingResource::make($building->load('managementHistory.customer'));
+        return BuildingResource::make($building->load('insurer', 'managementHistory.customer', 'managementHistory.insurer'));
     }
 
     /**
@@ -73,7 +73,7 @@ class BuildingController extends Controller
     public function update(UpdateBuildingRequest $request, Building $building)
     {
         $this->buildingService->updateBuilding($building, $request->validated());
-        return BuildingResource::make($building->fresh()->load('managementHistory.customer'));
+        return BuildingResource::make($building->fresh()->load('insurer', 'managementHistory.customer', 'managementHistory.insurer'));
     }
 
     /**

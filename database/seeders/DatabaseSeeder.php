@@ -7,6 +7,7 @@ use App\Constants\ReportStatus;
 use App\Constants\ReportSubStatus;
 use App\Models\Building;
 use App\Models\BuildingManagement;
+use App\Models\Insurer;
 use App\Models\Status;
 use App\Models\SubStatus;
 use App\Models\User;
@@ -85,6 +86,11 @@ class DatabaseSeeder extends Seeder
             'phone_number' => '06301234567',
         ]);
 
+        $insurer = Insurer::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Teszt Biztosító Zrt.',
+        ]);
+
         $building = Building::create([
             'uuid' => Str::uuid(),
             'name' => 'TH Teszt Ház',
@@ -95,12 +101,13 @@ class DatabaseSeeder extends Seeder
             'street_type' => StreetType::UTCA,
             'street_number' => '1',
             'account_number' => '00000000-00000000-00000001',
-            'insurer' => 'Teszt Biztosító Zrt.',
+            'insurer_id' => $insurer->id,
         ]);
 
         BuildingManagement::create([
             'building_id' => $building->id,
             'customer_id' => $customer->id,
+            'insurer_id' => $insurer->id,
             'start_date' => now(),
         ]);
 

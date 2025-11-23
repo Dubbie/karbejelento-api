@@ -1,3 +1,9 @@
+## Unreleased
+
+### Feat
+
+- add insurer entity with CRUD endpoints and wire buildings/reports/importer to reference insurers with history tracking
+
 ## v0.1.1 (2025-11-22)
 
 ### Fix

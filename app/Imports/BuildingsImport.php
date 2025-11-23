@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Http\Requests\Building\StoreBuildingRequest;
 use App\Models\BuildingImport;
+use App\Models\Insurer;
 use App\Services\BuildingService;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -52,6 +53,23 @@ class BuildingsImport implements OnEachRow, WithHeadingRow, WithChunkReading, Sh
                 if (isset($this->headerMap[$slugifiedHeader])) {
                     $internalKey = $this->headerMap[$slugifiedHeader];
                     $translatedData[$internalKey] = $value;
+                }
+            }
+
+            if (isset($translatedData['insurer'])) {
+                $insurerName = trim((string) $translatedData['insurer']);
+                unset($translatedData['insurer']);
+
+                if ($insurerName !== '') {
+                    $insurer = Insurer::where('name', $insurerName)->first();
+
+                    if (!$insurer) {
+                        throw ValidationException::withMessages([
+                            'insurer' => ["Unknown insurer '{$insurerName}'. Please select an existing insurer."],
+                        ]);
+                    }
+
+                    $translatedData['insurer_uuid'] = (string) $insurer->uuid;
                 }
             }
 

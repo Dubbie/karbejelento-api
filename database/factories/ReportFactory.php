@@ -9,6 +9,7 @@ use App\Models\Building;
 use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\Insurer;
 use Database\Factories\Concerns\ResolvesStatuses;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -45,7 +46,7 @@ class ReportFactory extends Factory
             'created_by_user_id' => User::factory(),
             'notifier_id' => Notifier::factory(),
             'bond_number' => $this->faker->numerify('BOND-########'),
-            'insurer' => $this->faker->company(),
+            'insurer_id' => Insurer::factory(),
             'damage_id' => null,
             'damage_type' => $this->faker->randomElement($damageTypes),
             'damage_description' => $this->faker->paragraph(3),

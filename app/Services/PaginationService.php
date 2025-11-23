@@ -42,23 +42,30 @@ class PaginationService
 
     private static function applySorting(Builder $query, Request $request, array $sortableFields): void
     {
+        $fieldMap = self::normalizeFieldMap($sortableFields);
         $sort = $request->input('sort');
 
         if (!$sort) {
-            $query->orderBy('created_at', 'desc'); // Default sort
+            $defaultColumn = $query->getModel()->getTable() . '.created_at';
+            $query->orderBy($defaultColumn, 'desc'); // Default sort
             return;
         }
 
         [$field, $direction] = array_pad(explode(':', $sort), 2, 'asc');
         $direction = strtolower($direction) === 'desc' ? 'DESC' : 'ASC';
 
-        if (in_array($field, $sortableFields)) {
-            $query->orderBy($field, $direction);
+        if (isset($fieldMap[$field])) {
+            $query->orderBy($fieldMap[$field], $direction);
+            return;
         }
+
+        $defaultColumn = $query->getModel()->getTable() . '.created_at';
+        $query->orderBy($defaultColumn, 'desc');
     }
 
     private static function applyFiltering(Builder $query, Request $request, array $filterableFields): void
     {
+        $fieldMap = self::normalizeFieldMap($filterableFields);
         $filters = $request->input('filter', []);
         if (is_string($filters)) {
             $filters = [$filters];
@@ -68,22 +75,44 @@ class PaginationService
             [$field, $op, $value] = array_pad(explode(':', $filter, 3), 3, null);
 
             if (!$field || !$op || $value === null) continue;
-            if (!in_array($field, $filterableFields)) continue;
+            if (!isset($fieldMap[$field])) continue;
+
+            $column = $fieldMap[$field];
 
             switch (strtolower($op)) {
                 case 'eq':
-                    $query->where($field, '=', $value);
+                    $query->where($column, '=', $value);
                     break;
                 case 'neq':
-                    $query->where($field, '!=', $value);
+                    $query->where($column, '!=', $value);
                     break;
                 case 'like':
-                    $query->where($field, 'LIKE', "%{$value}%");
+                    $query->where($column, 'LIKE', "%{$value}%");
                     break;
                 case 'in':
-                    $query->whereIn($field, explode(',', $value));
+                    $query->whereIn($column, explode(',', $value));
                     break;
             }
         }
+    }
+
+    /**
+     * Normalize sortable/filterable definitions into an associative array.
+     *
+     * @param array<int|string, string> $fields
+     */
+    private static function normalizeFieldMap(array $fields): array
+    {
+        $map = [];
+
+        foreach ($fields as $key => $value) {
+            if (is_int($key)) {
+                $map[$value] = $value;
+            } else {
+                $map[$key] = $value;
+            }
+        }
+
+        return $map;
     }
 }

@@ -6,8 +6,8 @@ use App\Constants\UserRole;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Str;
 
 /**
  * @mixin \App\Traits\Paginatable
@@ -38,7 +38,7 @@ class Building extends Model
         'street_number',
         'bond_number',
         'account_number',
-        'insurer',
+        'insurer_id',
         'is_archived',
     ];
 
@@ -49,6 +49,7 @@ class Building extends Model
      */
     protected $hidden = [
         'id',
+        'insurer_id',
     ];
 
     /**
@@ -72,6 +73,7 @@ class Building extends Model
     protected $appends = [
         'formatted_address',
         'current_customer',
+        'current_insurer',
     ];
 
     /**
@@ -89,6 +91,14 @@ class Building extends Model
     {
         // We order by start_date descending so the most recent is first.
         return $this->hasMany(BuildingManagement::class)->orderBy('start_date', 'desc');
+    }
+
+    /**
+     * The insurer currently associated with the building.
+     */
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class);
     }
 
     /**
@@ -110,6 +120,16 @@ class Building extends Model
 
         // If a record is found, return its associated customer. Otherwise, return null.
         return $currentManagement?->customer;
+    }
+
+    /**
+     * Get the current insurer associated with the building.
+     */
+    protected function getCurrentInsurerAttribute(): ?Insurer
+    {
+        $currentManagement = $this->managementHistory->firstWhere('end_date', null);
+
+        return $currentManagement?->insurer ?? $this->insurer;
     }
 
     /**

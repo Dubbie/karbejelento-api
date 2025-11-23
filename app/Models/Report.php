@@ -26,6 +26,7 @@ class Report extends Model
         'building_id',
         'created_by_user_id',
         'notifier_id',
+        'insurer_id',
     ];
 
     protected $casts = [
@@ -57,6 +58,11 @@ class Report extends Model
     public function notifier(): BelongsTo
     {
         return $this->belongsTo(Notifier::class);
+    }
+
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class);
     }
 
     public function attachments(): HasMany
