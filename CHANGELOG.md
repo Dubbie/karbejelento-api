@@ -1,3 +1,9 @@
+## v0.3.0 (2025-11-23)
+
+### Feat
+
+- **insurer**: add insurer CRUD with tests
+
 ## v0.2.0 (2025-11-23)
 
 ### Feat
