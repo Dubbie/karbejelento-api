@@ -1,7 +1,7 @@
 # Damage Report Management API
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/laravel/framework)](https://packagist.org/packages/laravel/framework)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Dubbie/karbejelento-api/laravel-ci.yaml?branch=main)](https://github.com/Dubbie/karbejelento-api/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Dubbie/karbejelento-api/production.yaml?branch=production)](https://github.com/Dubbie/karbejelento-api/actions)
 
 This is the Laravel backend API for the damage report management system. It provides the necessary endpoints for administrators, managers, and customers to create, view, and manage damage reports for their buildings.
 
