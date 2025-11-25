@@ -125,7 +125,6 @@ class ReportController extends Controller
         }
 
         $payload = $request->transitionPayload();
-
         $updatedReport = $this->transitionService->transition(
             $report,
             $status,
