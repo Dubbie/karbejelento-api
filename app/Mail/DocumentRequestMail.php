@@ -26,6 +26,7 @@ class DocumentRequestMail extends Mailable
         public string $emailBody,
         public array $requestedDocuments,
         public ?string $otherDocumentNote = null,
+        public ?string $documentRequestUrl = null,
         array $attachments = []
     ) {
         $this->mailAttachments = $attachments;
@@ -41,6 +42,7 @@ class DocumentRequestMail extends Mailable
                 'emailBody' => $this->emailBody,
                 'requestedDocuments' => $this->requestedDocuments,
                 'otherDocumentNote' => $this->otherDocumentNote,
+                'documentRequestUrl' => $this->documentRequestUrl,
             ]);
 
         foreach ($this->mailAttachments as $attachment) {

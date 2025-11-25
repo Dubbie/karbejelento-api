@@ -41,6 +41,7 @@ class ChangeStatusRequest extends FormRequest
             'payload.other_document_note' => ['nullable', 'string', 'max:2000'],
             'payload.attachments' => ['nullable', 'array'],
             'payload.attachments.*.file' => ['file', 'max:10240'], // 10MB per file
+            'payload.attachments.*.files' => ['file', 'max:10240'],
         ];
     }
 

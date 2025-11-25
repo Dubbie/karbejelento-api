@@ -8,6 +8,7 @@ use App\Constants\ReportSubStatus;
 use App\Mail\DocumentRequestMail;
 use App\Models\Building;
 use App\Models\BuildingManagement;
+use App\Models\DocumentRequest;
 use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\ReportAttachment;
@@ -390,6 +391,13 @@ class ReportControllerTest extends TestCase
             ->assertJsonPath('status.name', $this->deficiencyStatus->name)
             ->assertJsonPath('sub_status.name', ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT);
 
+        $documentRequest = DocumentRequest::where('report_id', $report->id)->first();
+        $this->assertNotNull($documentRequest);
+        $this->assertSame($payload['email_title'], $documentRequest->email_title);
+        $this->assertSame($payload['requested_documents'], $documentRequest->requested_documents);
+        $this->assertFalse($documentRequest->is_fulfilled);
+        $this->assertDatabaseCount('document_request_items', count($payload['requested_documents']));
+
         $this->assertDatabaseHas('report_status_histories', [
             'report_id' => $report->id,
             'status_id' => $this->deficiencyStatus->id,
@@ -405,6 +413,7 @@ class ReportControllerTest extends TestCase
             $this->assertSame($payload['other_document_note'], $mail->otherDocumentNote);
             $this->assertCount(1, $mail->mailAttachments);
             $this->assertInstanceOf(UploadedFile::class, $mail->mailAttachments[0]);
+            $this->assertNotEmpty($mail->documentRequestUrl);
 
             return $mail->report->is($report);
         });

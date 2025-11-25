@@ -5,12 +5,15 @@ namespace App\Services\ReportStatusTransitions\Rules;
 use App\Constants\ReportStatus;
 use App\Constants\ReportSubStatus;
 use App\Mail\DocumentRequestMail;
+use App\Models\DocumentRequest;
 use App\Models\Report;
 use App\Models\Status;
 use App\Models\SubStatus;
 use App\Models\User;
 use App\Services\ReportService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SendDocumentRequestEmailRule implements ReportStatusTransitionRule
@@ -50,6 +53,17 @@ class SendDocumentRequestEmailRule implements ReportStatusTransitionRule
         $attachments = $payload['attachments'] ?? [];
         $attachments = is_array($attachments) ? $attachments : [];
 
+        $documentRequest = $this->createDocumentRequest(
+            $report,
+            $actor,
+            $emailTitle,
+            $emailBody,
+            $requestedDocuments,
+            $otherDocumentNote
+        );
+
+        $documentRequestUrl = $this->buildDocumentRequestUrl($documentRequest);
+
         foreach ($recipients as $recipient) {
             Mail::to($recipient)->send(new DocumentRequestMail(
                 $report,
@@ -57,6 +71,7 @@ class SendDocumentRequestEmailRule implements ReportStatusTransitionRule
                 $emailBody,
                 $requestedDocuments,
                 $otherDocumentNote,
+                $documentRequestUrl,
                 $attachments
             ));
         }
@@ -83,5 +98,61 @@ class SendDocumentRequestEmailRule implements ReportStatusTransitionRule
         ];
 
         return array_values(array_unique(array_filter($emails)));
+    }
+
+    /**
+     * @param array<int, string> $requestedDocuments
+     */
+    private function createDocumentRequest(
+        Report $report,
+        User $actor,
+        string $emailTitle,
+        string $emailBody,
+        array $requestedDocuments,
+        ?string $otherDocumentNote
+    ): DocumentRequest {
+        $documents = array_values(array_filter($requestedDocuments, fn ($doc) => is_string($doc) && $doc !== ''));
+
+        return DB::transaction(function () use (
+            $report,
+            $actor,
+            $emailTitle,
+            $emailBody,
+            $documents,
+            $otherDocumentNote
+        ) {
+            $documentRequest = DocumentRequest::create([
+                'uuid' => (string) Str::uuid(),
+                'report_id' => $report->id,
+                'requested_by_user_id' => $actor->id,
+                'email_title' => $emailTitle,
+                'email_body' => $emailBody,
+                'requested_documents' => $documents,
+                'other_document_note' => $otherDocumentNote,
+                'public_token' => Str::random(48),
+                'sent_at' => now(),
+            ]);
+
+            foreach ($documents as $index => $label) {
+                $documentRequest->items()->create([
+                    'uuid' => (string) Str::uuid(),
+                    'label' => $label,
+                    'position' => $index + 1,
+                ]);
+            }
+
+            return $documentRequest;
+        });
+    }
+
+    private function buildDocumentRequestUrl(DocumentRequest $documentRequest): ?string
+    {
+        $base = config('client.document_request_base_url');
+
+        if (!$base) {
+            return null;
+        }
+
+        return rtrim($base, '/') . '/' . $documentRequest->uuid . '?token=' . $documentRequest->public_token;
     }
 }

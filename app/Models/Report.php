@@ -103,6 +103,11 @@ class Report extends Model
         return $this->hasMany(ReportStatusHistory::class)->latest();
     }
 
+    public function documentRequests(): HasMany
+    {
+        return $this->hasMany(DocumentRequest::class);
+    }
+
     public function scopeForUser(Builder $query, User $user): Builder
     {
         // Admins and Damage Solvers see everything

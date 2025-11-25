@@ -18,6 +18,13 @@
         </ul>
     @endif
 
+    @if(!empty($documentRequestUrl))
+        <p>
+            You can upload the requested files using the following secure link:<br>
+            <a href="{{ $documentRequestUrl }}">{{ $documentRequestUrl }}</a>
+        </p>
+    @endif
+
     @if(!empty($otherDocumentNote))
         <p><strong>Additional notes:</strong> {{ $otherDocumentNote }}</p>
     @endif
