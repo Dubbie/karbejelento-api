@@ -18,14 +18,15 @@ class RequireDamageIdForUnderAdministrationRule implements ReportStatusTransitio
     {
         $currentStatusName = $report->status?->name;
 
-        return [in_array(
+        $shouldSupport = in_array(
             $currentStatusName,
             [
                 ReportStatus::REPORTED_TO_DAMARISK,
                 ReportStatus::WAITING_FOR_INSURER_DAMAGE_ID
             ]
-        ), $subStatus === null]
-            && $targetStatus->name === ReportStatus::UNDER_INSURER_ADMINISTRATION;
+        ) && $targetStatus->name === ReportStatus::UNDER_INSURER_ADMINISTRATION && $subStatus === null;
+
+        return $shouldSupport;
     }
 
     public function handle(
