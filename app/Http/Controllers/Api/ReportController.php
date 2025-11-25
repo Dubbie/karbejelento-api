@@ -48,6 +48,7 @@ class ReportController extends Controller
         'currentStatusHistory.user',
         'currentStatusHistory.status',
         'currentStatusHistory.subStatus',
+        'documentRequests.items.files',
         'insurer',
     ];
 
