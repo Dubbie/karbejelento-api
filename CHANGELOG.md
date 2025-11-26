@@ -1,3 +1,10 @@
+## v0.4.0 (2025-11-26)
+
+### Feat
+
+- add document request handling
+- **rules**: improve rules and disallow repeated statuses
+
 ## v0.3.0 (2025-11-23)
 
 ### Feat

@@ -8,7 +8,7 @@
         "framework"
     ],
     "license": "MIT",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "require": {
         "php": "^8.2",
         "dedoc/scramble": "^0.13.4",
