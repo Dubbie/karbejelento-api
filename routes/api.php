@@ -3,6 +3,7 @@
 use App\Constants\UserRole;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BuildingController;
+use App\Http\Controllers\Api\DocumentRequestPublicController;
 use App\Http\Controllers\Api\InsurerController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
@@ -11,6 +12,13 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     // Public Authentication Route
     Route::post('/auth/login', [AuthController::class, 'login']);
+
+    Route::controller(DocumentRequestPublicController::class)
+        ->prefix('public/document-requests')
+        ->group(function () {
+            Route::get('/{documentRequest:uuid}', 'show');
+            Route::post('/{documentRequest:uuid}/items/{documentRequestItem:uuid}/files', 'storeItemFile');
+        });
 
     // All routes in this group are protected by the 'auth:sanctum' middleware
     Route::middleware('auth:sanctum')->group(function () {

@@ -2,14 +2,25 @@
 
 namespace App\Services;
 
+use App\Constants\ReportStatus;
 use App\Models\Report;
 use App\Models\Status;
 use App\Models\SubStatus;
 use App\Models\User;
 use App\Services\ReportStatusTransitions\Rules\ReportStatusTransitionRule;
+use Illuminate\Validation\ValidationException;
 
 class ReportStatusTransitionService
 {
+    /**
+     * Status/sub-status combinations that may be repeated without raising a validation error.
+     *
+     * @var array<string, array<int, string|null>>
+     */
+    private const REPEATABLE_STATE_COMBINATIONS = [
+        ReportStatus::UNDER_INSURER_ADMINISTRATION => [null],
+    ];
+
     /**
      * @param ReportStatusTransitionRule[] $rules
      */
@@ -28,7 +39,20 @@ class ReportStatusTransitionService
         User $actor,
         array $payload = []
     ): Report {
-        $report->loadMissing('status');
+        $report->loadMissing(['status', 'subStatus']);
+
+        $currentStatus = $report->status;
+        $isSameStatus = $currentStatus && $currentStatus->id === $targetStatus->id;
+        $currentSubStatus = $report->subStatus;
+        $isSameSubStatus = ($currentSubStatus?->id ?? null) === ($subStatus?->id ?? null);
+
+        if ($isSameStatus && $isSameSubStatus) {
+            if (!$this->currentStateAllowsRepeat($currentStatus, $currentSubStatus)) {
+                throw ValidationException::withMessages([
+                    'status' => ['The report is already in the selected status.'],
+                ]);
+            }
+        }
 
         foreach ($this->rules as $rule) {
             if ($rule->supports($report, $targetStatus, $subStatus)) {
@@ -40,5 +64,27 @@ class ReportStatusTransitionService
             'user_id' => $actor->id,
             'comment' => $payload['comment'] ?? null,
         ]);
+    }
+
+    private function currentStateAllowsRepeat(?Status $currentStatus, ?SubStatus $currentSubStatus): bool
+    {
+        if (!$currentStatus) {
+            return false;
+        }
+
+        $allowedSubStatuses = self::REPEATABLE_STATE_COMBINATIONS[$currentStatus->name] ?? [];
+
+        foreach ($allowedSubStatuses as $allowedSubStatus) {
+            $isNullCombination = $allowedSubStatus === null && $currentSubStatus === null;
+            $isMatchingSubStatus = $allowedSubStatus !== null
+                && $currentSubStatus
+                && $currentSubStatus->name === $allowedSubStatus;
+
+            if ($isNullCombination || $isMatchingSubStatus) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
