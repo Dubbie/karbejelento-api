@@ -54,6 +54,9 @@ class ReportResource extends JsonResource
             'document_requests' => $this->whenLoaded('documentRequests', function () {
                 return DocumentRequestResource::collection($this->documentRequests);
             }),
+            'closing_payments' => $this->whenLoaded('closingPayments', function () {
+                return ReportClosingPaymentResource::collection($this->closingPayments);
+            }),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

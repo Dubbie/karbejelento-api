@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\PaginationService;
 use App\Services\ReportService;
 use App\Services\ReportStatusTransitionService;
+use App\Services\ReportStatusTransitions\Rules\CloseReportWithPaymentRule;
 use App\Services\ReportStatusTransitions\Rules\RequireDamageIdForUnderAdministrationRule;
 use App\Services\ReportStatusTransitions\Rules\SendDocumentRequestEmailRule;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
                 [
                     $app->make(RequireDamageIdForUnderAdministrationRule::class),
                     $app->make(SendDocumentRequestEmailRule::class),
+                    $app->make(CloseReportWithPaymentRule::class),
                 ]
             );
         });

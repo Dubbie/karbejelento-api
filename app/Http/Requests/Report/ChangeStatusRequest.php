@@ -24,6 +24,7 @@ class ChangeStatusRequest extends FormRequest
     public function rules(): array
     {
         $isDocumentRequest = $this->isDocumentRequestTransition();
+        $isClosingWithPayment = $this->isClosingWithPaymentTransition();
 
         return [
             'status' => ['required', 'string', Rule::exists('statuses', 'name')],
@@ -42,6 +43,12 @@ class ChangeStatusRequest extends FormRequest
             'payload.attachments' => ['nullable', 'array'],
             'payload.attachments.*.file' => ['file', 'max:10240'], // 10MB per file
             'payload.attachments.*.files' => ['file', 'max:10240'],
+            'payload.closing_payments' => [Rule::requiredIf($isClosingWithPayment), 'array', 'min:1'],
+            'payload.closing_payments.*.recipient' => ['required_with:payload.closing_payments', 'string', 'max:255'],
+            'payload.closing_payments.*.amount' => ['required_with:payload.closing_payments', 'numeric', 'min:0'],
+            'payload.closing_payments.*.currency' => ['required_with:payload.closing_payments', 'string', 'size:3'],
+            'payload.closing_payments.*.payment_date' => ['required_with:payload.closing_payments', 'date'],
+            'payload.closing_payments.*.payment_time' => ['nullable', 'date_format:H:i'],
         ];
     }
 
@@ -74,6 +81,12 @@ class ChangeStatusRequest extends FormRequest
     {
         return $this->input('status') === ReportStatus::DATA_OR_DOCUMENT_DEFICIENCY
             && $this->input('sub_status') === ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT;
+    }
+
+    private function isClosingWithPaymentTransition(): bool
+    {
+        return $this->input('status') === ReportStatus::CLOSED
+            && $this->input('sub_status') === ReportSubStatus::CLOSED_WITH_PAYMENT;
     }
 
     /**

@@ -108,6 +108,11 @@ class Report extends Model
         return $this->hasMany(DocumentRequest::class);
     }
 
+    public function closingPayments(): HasMany
+    {
+        return $this->hasMany(ReportClosingPayment::class);
+    }
+
     public function scopeForUser(Builder $query, User $user): Builder
     {
         // Admins and Damage Solvers see everything
