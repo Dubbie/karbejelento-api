@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Constants\ReportStatus;
+use App\Constants\ReportSubStatus;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
+use App\Models\Report;
+use App\Models\Status;
+use App\Models\SubStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -98,5 +103,47 @@ class DocumentRequestPublicControllerTest extends TestCase
         $this->assertTrue($documentRequest->is_fulfilled);
 
         $this->assertCount(2, $documentRequest->items()->first()->files);
+    }
+
+    public function test_fulfilling_document_request_updates_report_status(): void
+    {
+        Storage::fake('public');
+
+        $status = Status::factory()->create(['name' => ReportStatus::DATA_OR_DOCUMENT_DEFICIENCY]);
+        $waitingSubStatus = SubStatus::factory()->create([
+            'status_id' => $status->id,
+            'name' => ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT,
+        ]);
+        $sentSubStatus = SubStatus::factory()->create([
+            'status_id' => $status->id,
+            'name' => ReportSubStatus::DEFICIENCY_DOCUMENT_SENT_TO_DAMARISK,
+        ]);
+
+        $report = Report::factory()->create([
+            'status_id' => $status->id,
+            'sub_status_id' => $waitingSubStatus->id,
+        ]);
+
+        $documentRequest = DocumentRequest::factory()
+            ->for($report)
+            ->has(DocumentRequestItem::factory()->count(1), 'items')
+            ->create(['is_fulfilled' => false]);
+
+        $item = $documentRequest->items()->first();
+
+        $file = UploadedFile::fake()->create('proof.pdf', 200, 'application/pdf');
+
+        $this->postJson(
+            '/api/v1/public/document-requests/' . $documentRequest->uuid . '/items/' . $item->uuid . '/files',
+            [
+                'token' => $documentRequest->public_token,
+                'file' => $file,
+            ]
+        )->assertCreated();
+
+        $report->refresh();
+
+        $this->assertEquals($status->id, $report->status_id);
+        $this->assertEquals($sentSubStatus->id, $report->sub_status_id);
     }
 }
