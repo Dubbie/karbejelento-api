@@ -51,6 +51,9 @@ class ReportResource extends JsonResource
             'current_status_history' => $this->whenLoaded('currentStatusHistory', function () {
                 return ReportStatusHistoryResource::make($this->currentStatusHistory);
             }),
+            'document_requests' => $this->whenLoaded('documentRequests', function () {
+                return DocumentRequestResource::collection($this->documentRequests);
+            }),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

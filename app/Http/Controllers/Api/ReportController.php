@@ -48,6 +48,7 @@ class ReportController extends Controller
         'currentStatusHistory.user',
         'currentStatusHistory.status',
         'currentStatusHistory.subStatus',
+        'documentRequests.items.files',
         'insurer',
     ];
 
@@ -125,7 +126,6 @@ class ReportController extends Controller
         }
 
         $payload = $request->transitionPayload();
-
         $updatedReport = $this->transitionService->transition(
             $report,
             $status,

@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Constants\DamageType;
 use App\Constants\ReportStatus;
+use App\Constants\ReportSubStatus;
+use App\Mail\DocumentRequestMail;
 use App\Models\Building;
 use App\Models\BuildingManagement;
+use App\Models\DocumentRequest;
 use App\Models\Notifier;
 use App\Models\Report;
 use App\Models\ReportAttachment;
@@ -14,6 +17,7 @@ use App\Models\SubStatus;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -31,6 +35,8 @@ class ReportControllerTest extends TestCase
     private Status $waitingStatus;
     private SubStatus $waitingSubStatus;
     private Status $underAdministrationStatus;
+    private Status $deficiencyStatus;
+    private SubStatus $deficiencyWaitingSubStatus;
 
     /**
      * Set up the common actors for all tests.
@@ -257,6 +263,14 @@ class ReportControllerTest extends TestCase
             if ($name === ReportStatus::UNDER_INSURER_ADMINISTRATION) {
                 $this->underAdministrationStatus = $status;
             }
+
+            if ($name === ReportStatus::DATA_OR_DOCUMENT_DEFICIENCY) {
+                $this->deficiencyStatus = $status;
+                $this->deficiencyWaitingSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT,
+                ]);
+            }
         }
     }
 
@@ -309,6 +323,100 @@ class ReportControllerTest extends TestCase
             'status_id' => $this->underAdministrationStatus->id,
             'comment' => 'Insurer confirmed receipt',
         ]);
+    }
+
+    public function test_document_request_transition_requires_payload(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'created_by_user_id' => $this->manager->id,
+            'notifier_id' => $this->notifier->id,
+            'insurer_id' => $this->building->insurer_id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->deficiencyStatus->name,
+            'sub_status' => ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'payload.email_title',
+                'payload.email_body',
+                'payload.requested_documents',
+            ]);
+    }
+
+    public function test_document_request_transition_sends_mail_and_changes_status(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'created_by_user_id' => $this->manager->id,
+            'notifier_id' => $this->notifier->id,
+            'insurer_id' => $this->building->insurer_id,
+            'status_id' => $this->defaultStatus->id,
+            'sub_status_id' => null,
+            'claimant_email' => 'claimant@example.com',
+        ]);
+
+        Mail::fake();
+        Sanctum::actingAs($this->manager);
+
+        $payload = [
+            'email_title' => 'Missing documents',
+            'email_body' => "Hello,\nWe need more paperwork.",
+            'requested_documents' => ['Invoice copy', 'Proof of ownership'],
+            'other_document_note' => 'Please send within 5 days.',
+            'attachments' => [
+                ['file' => UploadedFile::fake()->create('checklist.pdf', 120, 'application/pdf')],
+            ],
+        ];
+
+        $response = $this->post(
+            '/api/v1/reports/' . $report->uuid . '/status',
+            [
+                'status' => $this->deficiencyStatus->name,
+                'sub_status' => ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT,
+                'payload' => $payload,
+                'comment' => 'Request sent to customer',
+            ],
+            ['Accept' => 'application/json']
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status.name', $this->deficiencyStatus->name)
+            ->assertJsonPath('sub_status.name', ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT);
+
+        $documentRequest = DocumentRequest::where('report_id', $report->id)->first();
+        $this->assertNotNull($documentRequest);
+        $this->assertSame($payload['email_title'], $documentRequest->email_title);
+        $this->assertSame($payload['requested_documents'], $documentRequest->requested_documents);
+        $this->assertFalse($documentRequest->is_fulfilled);
+        $this->assertDatabaseCount('document_request_items', count($payload['requested_documents']));
+
+        $this->assertDatabaseHas('report_status_histories', [
+            'report_id' => $report->id,
+            'status_id' => $this->deficiencyStatus->id,
+            'sub_status_id' => $this->deficiencyWaitingSubStatus->id,
+            'comment' => 'Request sent to customer',
+        ]);
+
+        Mail::assertSent(DocumentRequestMail::class, 2);
+        Mail::assertSent(DocumentRequestMail::class, function (DocumentRequestMail $mail) use ($report, $payload) {
+            $this->assertSame($payload['email_title'], $mail->emailTitle);
+            $this->assertSame($payload['email_body'], $mail->emailBody);
+            $this->assertEquals($payload['requested_documents'], $mail->requestedDocuments);
+            $this->assertSame($payload['other_document_note'], $mail->otherDocumentNote);
+            $this->assertCount(1, $mail->mailAttachments);
+            $this->assertInstanceOf(UploadedFile::class, $mail->mailAttachments[0]);
+            $this->assertNotEmpty($mail->documentRequestUrl);
+
+            return $mail->report->is($report);
+        });
     }
 
     public function test_manager_can_update_damage_id_without_status_change(): void

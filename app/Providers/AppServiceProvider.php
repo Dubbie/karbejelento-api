@@ -6,6 +6,7 @@ use App\Services\PaginationService;
 use App\Services\ReportService;
 use App\Services\ReportStatusTransitionService;
 use App\Services\ReportStatusTransitions\Rules\RequireDamageIdForUnderAdministrationRule;
+use App\Services\ReportStatusTransitions\Rules\SendDocumentRequestEmailRule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(ReportService::class),
                 [
                     $app->make(RequireDamageIdForUnderAdministrationRule::class),
+                    $app->make(SendDocumentRequestEmailRule::class),
                 ]
             );
         });
