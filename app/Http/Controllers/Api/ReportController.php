@@ -49,7 +49,9 @@ class ReportController extends Controller
         'currentStatusHistory.status',
         'currentStatusHistory.subStatus',
         'documentRequests.items.files',
+        'closingPayments.createdBy',
         'insurer',
+        'duplicateOfReport',
     ];
 
     protected function loadFullReport(Report $report): Report

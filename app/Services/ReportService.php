@@ -63,7 +63,7 @@ class ReportService
     public function getAllReportsForUser(User $user, Request $request): array
     {
         $query = Report::forUser($user)
-            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer']); // Eager load relationships
+            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer', 'duplicateOfReport']); // Eager load relationships
 
         // -- Apply Filters --
         if ($search = $request->input('searchQuery')) {
@@ -90,7 +90,7 @@ class ReportService
     public function getAllReportsForBuilding(Building $building, Request $request): array
     {
         $query = Report::forBuilding($building)
-            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer']); // Eager load relationships
+            ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer', 'duplicateOfReport']); // Eager load relationships
 
         // -- Apply Filters --
         if ($search = $request->input('searchQuery')) {

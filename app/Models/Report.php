@@ -27,6 +27,7 @@ class Report extends Model
         'created_by_user_id',
         'notifier_id',
         'insurer_id',
+        'duplicate_report_id',
     ];
 
     protected $casts = [
@@ -106,6 +107,16 @@ class Report extends Model
     public function documentRequests(): HasMany
     {
         return $this->hasMany(DocumentRequest::class);
+    }
+
+    public function closingPayments(): HasMany
+    {
+        return $this->hasMany(ReportClosingPayment::class);
+    }
+
+    public function duplicateOfReport(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'duplicate_report_id');
     }
 
     public function scopeForUser(Builder $query, User $user): Builder

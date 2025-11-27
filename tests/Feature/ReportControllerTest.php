@@ -37,6 +37,10 @@ class ReportControllerTest extends TestCase
     private Status $underAdministrationStatus;
     private Status $deficiencyStatus;
     private SubStatus $deficiencyWaitingSubStatus;
+    private Status $closedStatus;
+    private SubStatus $closedWithPaymentSubStatus;
+    private SubStatus $closedWithRejectionSubStatus;
+    private SubStatus $closedDuplicateSubStatus;
 
     /**
      * Set up the common actors for all tests.
@@ -271,6 +275,22 @@ class ReportControllerTest extends TestCase
                     'name' => ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT,
                 ]);
             }
+
+            if ($name === ReportStatus::CLOSED) {
+                $this->closedStatus = $status;
+                $this->closedWithPaymentSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::CLOSED_WITH_PAYMENT,
+                ]);
+                $this->closedWithRejectionSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::CLOSED_WITH_REJECTION,
+                ]);
+                $this->closedDuplicateSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::CLOSED_DUPLICATE_REPORT,
+                ]);
+            }
         }
     }
 
@@ -322,6 +342,151 @@ class ReportControllerTest extends TestCase
             'report_id' => $report->id,
             'status_id' => $this->underAdministrationStatus->id,
             'comment' => 'Insurer confirmed receipt',
+        ]);
+    }
+
+    public function test_closing_with_payment_requires_payments(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedWithPaymentSubStatus->name,
+            'comment' => 'Closing after payout',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['payload.closing_payments']);
+    }
+
+    public function test_closing_requires_comment_for_closed_statuses(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedWithRejectionSubStatus->name,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['comment']);
+    }
+
+    public function test_closing_with_payment_creates_payment_records(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $payload = [
+            [
+                'recipient' => 'Claimant One',
+                'amount' => 1234.56,
+                'currency' => 'huf',
+                'payment_date' => '2025-12-01',
+                'payment_time' => '08:30',
+            ],
+            [
+                'recipient' => 'Claimant Two',
+                'amount' => 789.10,
+                'currency' => 'EUR',
+                'payment_date' => '2025-12-02',
+                'payment_time' => null,
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedWithPaymentSubStatus->name,
+            'payload' => [
+                'closing_payments' => $payload,
+            ],
+            'comment' => 'Paid out',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status.name', $this->closedStatus->name)
+            ->assertJsonPath('sub_status.name', $this->closedWithPaymentSubStatus->name)
+            ->assertJsonPath('closing_payments.0.recipient', 'Claimant One')
+            ->assertJsonPath('closing_payments.0.currency', 'HUF')
+            ->assertJsonCount(2, 'closing_payments');
+
+        $this->assertDatabaseHas('report_closing_payments', [
+            'report_id' => $report->id,
+            'recipient' => 'Claimant One',
+            'amount' => 1234.56,
+            'currency' => 'HUF',
+            'payment_time' => '08:30',
+        ]);
+        $this->assertDatabaseHas('report_closing_payments', [
+            'report_id' => $report->id,
+            'recipient' => 'Claimant Two',
+            'amount' => 789.10,
+            'currency' => 'EUR',
+            'payment_time' => null,
+        ]);
+    }
+
+    public function test_closing_as_duplicate_requires_reference_report(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedDuplicateSubStatus->name,
+            'comment' => 'Duplicate claim',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['payload.duplicate_report_uuid']);
+    }
+
+    public function test_closing_as_duplicate_stores_reference_report(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+        $originalReport = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedDuplicateSubStatus->name,
+            'comment' => 'Duplicate claim',
+            'payload' => [
+                'duplicate_report_uuid' => $originalReport->uuid,
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('duplicate_of_report_uuid', $originalReport->uuid);
+
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'duplicate_report_id' => $originalReport->id,
         ]);
     }
 

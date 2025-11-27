@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\DocumentRequestPublicController;
 use App\Http\Controllers\Api\InsurerController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ReportClosingPaymentController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -111,6 +112,16 @@ Route::prefix('v1')->group(function () {
             Route::post('/{report}/attachments', 'uploadAttachments');
             Route::post('/{report}/status', 'changeStatus')->middleware($reportManageRoles);
             Route::patch('/{report}/damage-id', 'updateDamageId')->middleware($reportManageRoles);
+
+            Route::controller(ReportClosingPaymentController::class)
+                ->middleware($reportManageRoles)
+                ->prefix('/{report}/closing-payments')
+                ->group(function () {
+                    Route::get('/', 'index');
+                    Route::post('/', 'store');
+                    Route::patch('/{closingPayment:uuid}', 'update');
+                    Route::delete('/{closingPayment:uuid}', 'destroy');
+                });
         });
     });
 });

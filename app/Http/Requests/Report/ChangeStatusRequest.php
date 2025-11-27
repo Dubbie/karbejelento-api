@@ -24,11 +24,14 @@ class ChangeStatusRequest extends FormRequest
     public function rules(): array
     {
         $isDocumentRequest = $this->isDocumentRequestTransition();
+        $isClosingWithPayment = $this->isClosingWithPaymentTransition();
+        $isClosingTransition = $this->isClosingTransition();
+        $isClosingDuplicate = $this->isClosingDuplicateTransition();
 
         return [
             'status' => ['required', 'string', Rule::exists('statuses', 'name')],
             'sub_status' => ['nullable', 'string', Rule::exists('sub_statuses', 'name')],
-            'comment' => ['nullable', 'string', 'max:2000'],
+            'comment' => [Rule::requiredIf($isClosingTransition), 'string', 'max:2000'],
             'payload' => ['nullable', 'array'],
             'payload.email_title' => [Rule::requiredIf($isDocumentRequest), 'string', 'max:255'],
             'payload.email_body' => [Rule::requiredIf($isDocumentRequest), 'string', 'max:5000'],
@@ -42,6 +45,18 @@ class ChangeStatusRequest extends FormRequest
             'payload.attachments' => ['nullable', 'array'],
             'payload.attachments.*.file' => ['file', 'max:10240'], // 10MB per file
             'payload.attachments.*.files' => ['file', 'max:10240'],
+            'payload.closing_payments' => [Rule::requiredIf($isClosingWithPayment), 'array', 'min:1'],
+            'payload.closing_payments.*.recipient' => ['required_with:payload.closing_payments', 'string', 'max:255'],
+            'payload.closing_payments.*.amount' => ['required_with:payload.closing_payments', 'numeric', 'min:0'],
+            'payload.closing_payments.*.currency' => ['required_with:payload.closing_payments', 'string', 'size:3'],
+            'payload.closing_payments.*.payment_date' => ['required_with:payload.closing_payments', 'date'],
+            'payload.closing_payments.*.payment_time' => ['nullable', 'date_format:H:i'],
+            'payload.duplicate_report_uuid' => [
+                Rule::requiredIf($isClosingDuplicate),
+                'string',
+                'uuid',
+                Rule::exists('reports', 'uuid'),
+            ],
         ];
     }
 
@@ -74,6 +89,23 @@ class ChangeStatusRequest extends FormRequest
     {
         return $this->input('status') === ReportStatus::DATA_OR_DOCUMENT_DEFICIENCY
             && $this->input('sub_status') === ReportSubStatus::DEFICIENCY_WAITING_FOR_DOCUMENT_FROM_CLIENT;
+    }
+
+    private function isClosingWithPaymentTransition(): bool
+    {
+        return $this->input('status') === ReportStatus::CLOSED
+            && $this->input('sub_status') === ReportSubStatus::CLOSED_WITH_PAYMENT;
+    }
+
+    private function isClosingTransition(): bool
+    {
+        return $this->input('status') === ReportStatus::CLOSED;
+    }
+
+    private function isClosingDuplicateTransition(): bool
+    {
+        return $this->input('status') === ReportStatus::CLOSED
+            && $this->input('sub_status') === ReportSubStatus::CLOSED_DUPLICATE_REPORT;
     }
 
     /**
