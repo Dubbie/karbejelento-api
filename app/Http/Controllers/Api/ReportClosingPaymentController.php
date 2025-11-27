@@ -13,6 +13,11 @@ use Illuminate\Support\Str;
 
 class ReportClosingPaymentController extends Controller
 {
+    /**
+     * List Closing Payments
+     *
+     * Return all closing payments for a specific report.
+     */
     public function index(Report $report)
     {
         $payments = $report->closingPayments()->with('createdBy')->get();
@@ -20,6 +25,11 @@ class ReportClosingPaymentController extends Controller
         return ReportClosingPaymentResource::collection($payments);
     }
 
+    /**
+     * Create Closing Payment
+     *
+     * Store a new closing payment entry for a report.
+     */
     public function store(StoreReportClosingPaymentRequest $request, Report $report)
     {
         $payload = $this->preparePayload($request->validated());
@@ -36,6 +46,11 @@ class ReportClosingPaymentController extends Controller
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Update Closing Payment
+     *
+     * Modify a closing payment belonging to the given report.
+     */
     public function update(
         UpdateReportClosingPaymentRequest $request,
         Report $report,
@@ -52,6 +67,11 @@ class ReportClosingPaymentController extends Controller
         return ReportClosingPaymentResource::make($closingPayment);
     }
 
+    /**
+     * Delete Closing Payment
+     *
+     * Remove a closing payment from a report.
+     */
     public function destroy(Report $report, ReportClosingPayment $closingPayment)
     {
         $this->assertPaymentBelongsToReport($closingPayment, $report);
