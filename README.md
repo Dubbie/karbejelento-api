@@ -59,7 +59,7 @@ The application has a comprehensive test suite. To run all tests within the DDEV
 ddev artisan test
 ```
 
-See `docs/notification-rules.md` for detailed guidance on configuring the notification engine.
+See `docs/README.md` for the complete project documentation (architecture overview, workflow details, and notification rule configuration).
 
 ## How to stop the project
 

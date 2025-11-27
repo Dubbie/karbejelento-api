@@ -16,6 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 class NotificationRuleController extends Controller
 {
+    /**
+     * List Notification Rules
+     *
+     * Return all configured notification rules with their recipients and filters.
+     */
     public function index()
     {
         $rules = NotificationRule::query()
@@ -26,6 +31,11 @@ class NotificationRuleController extends Controller
         return NotificationRuleResource::collection($rules);
     }
 
+    /**
+     * Create Notification Rule
+     *
+     * Store a new notification rule with its associated recipients.
+     */
     public function store(StoreNotificationRuleRequest $request)
     {
         $validated = $request->validated();
@@ -56,6 +66,11 @@ class NotificationRuleController extends Controller
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Show Notification Rule
+     *
+     * Display a single rule with recipient definitions and filters.
+     */
     public function show(NotificationRule $notificationRule)
     {
         $notificationRule->load(['recipients', 'status', 'subStatus']);
@@ -63,6 +78,11 @@ class NotificationRuleController extends Controller
         return NotificationRuleResource::make($notificationRule);
     }
 
+    /**
+     * Update Notification Rule
+     *
+     * Modify an existing notification rule and optionally replace recipients.
+     */
     public function update(UpdateNotificationRuleRequest $request, NotificationRule $notificationRule)
     {
         $validated = $request->validated();
@@ -105,6 +125,11 @@ class NotificationRuleController extends Controller
         return NotificationRuleResource::make($notificationRule);
     }
 
+    /**
+     * Delete Notification Rule
+     *
+     * Remove a notification rule permanently.
+     */
     public function destroy(NotificationRule $notificationRule)
     {
         $notificationRule->delete();
