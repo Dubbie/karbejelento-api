@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\NotificationEvent;
 use App\Constants\ReportStatus;
 use App\Models\Building;
 use App\Models\Notifier;
@@ -19,6 +20,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReportService
 {
+    public function __construct(private ReportNotificationService $notificationService) {}
+
     public function createReport(array $data, User $user): Report
     {
         $building = Building::where('uuid', $data['building_uuid'])->first();
@@ -39,7 +42,7 @@ class ReportService
 
         unset($data['building_uuid'], $data['notifier_uuid']);
 
-        return DB::transaction(function () use ($data, $user, $building, $notifier, $defaultStatus) {
+        $report = DB::transaction(function () use ($data, $user, $building, $notifier, $defaultStatus) {
             $report = Report::create(array_merge($data, [
                 'uuid' => Str::uuid(),
                 'created_by_user_id' => $user->id,
@@ -54,10 +57,19 @@ class ReportService
             $report = $this->changeReportStatus($report, $defaultStatus->id, null, [
                 'user_id' => $user->id,
                 'comment' => 'Report created.',
+                'notify' => false,
             ]);
 
             return $report;
         });
+
+        $this->notificationService->dispatch(NotificationEvent::REPORT_CREATED, $report, [
+            'status_id' => $report->status_id,
+            'sub_status_id' => $report->sub_status_id,
+            'triggered_by_user_id' => $user->id,
+        ]);
+
+        return $report;
     }
 
     public function getAllReportsForUser(User $user, Request $request): array
@@ -158,6 +170,7 @@ class ReportService
      */
     public function changeReportStatus(Report $report, int $statusId, ?int $subStatusId, array $options = []): Report
     {
+        $report->loadMissing(['status', 'subStatus']);
         $status = Status::with('subStatuses')->findOrFail($statusId);
         $subStatus = null;
 
@@ -171,7 +184,13 @@ class ReportService
             }
         }
 
-        DB::transaction(function () use ($report, $status, $subStatus, $options) {
+        $previousStatusId = $report->status?->id;
+        $previousStatusName = $report->status?->name;
+        $previousSubStatusId = $report->subStatus?->id;
+        $previousSubStatusName = $report->subStatus?->name;
+        $shouldNotify = (bool) ($options['notify'] ?? true);
+
+        $updatedReport = DB::transaction(function () use ($report, $status, $subStatus, $options) {
             $comment = $options['comment'] ?? null;
             $comment = $comment !== null ? trim((string) $comment) : null;
 
@@ -188,14 +207,33 @@ class ReportService
                 'sub_status_id' => $subStatus?->id,
                 'current_status_history_id' => $history->id,
             ]);
+            return $report->fresh(['status', 'subStatus', 'currentStatusHistory.user']);
         });
 
-        return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
+        if ($shouldNotify) {
+            $event = $status->name === ReportStatus::CLOSED
+                ? NotificationEvent::REPORT_CLOSED
+                : NotificationEvent::STATUS_CHANGED;
+
+            $this->notificationService->dispatch($event, $updatedReport, [
+                'status_id' => $status->id,
+                'sub_status_id' => $subStatus?->id,
+                'previous_status_id' => $previousStatusId,
+                'previous_status_name' => $previousStatusName,
+                'previous_sub_status_id' => $previousSubStatusId,
+                'previous_sub_status_name' => $previousSubStatusName,
+                'triggered_by_user_id' => $options['user_id'] ?? Auth::id(),
+            ]);
+        }
+
+        return $updatedReport;
     }
 
     public function updateDamageId(Report $report, string $damageId, User $actor, ?string $comment = null): Report
     {
-        return DB::transaction(function () use ($report, $damageId, $actor, $comment) {
+        $previousDamageId = $report->damage_id;
+
+        $updatedReport = DB::transaction(function () use ($report, $damageId, $actor, $comment) {
             $report->update([
                 'damage_id' => $damageId,
             ]);
@@ -210,7 +248,16 @@ class ReportService
 
             $report->update(['current_status_history_id' => $history->id]);
 
-            return $report->fresh(['status', 'subStatus', 'currentStatusHistory']);
+            return $report->fresh(['status', 'subStatus', 'currentStatusHistory.user']);
         });
+
+        $this->notificationService->dispatch(NotificationEvent::DAMAGE_ID_UPDATED, $updatedReport, [
+            'previous_damage_id' => $previousDamageId,
+            'status_id' => $updatedReport->status_id,
+            'sub_status_id' => $updatedReport->sub_status_id,
+            'triggered_by_user_id' => $actor->id,
+        ]);
+
+        return $updatedReport;
     }
 }
