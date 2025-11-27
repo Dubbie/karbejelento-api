@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\DocumentRequestPublicController;
 use App\Http\Controllers\Api\InsurerController;
+use App\Http\Controllers\Api\NotificationRuleController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ReportClosingPaymentController;
 use App\Http\Controllers\Api\UserController;
@@ -47,6 +48,17 @@ Route::prefix('v1')->group(function () {
             // Apply the role middleware ONLY to the 'store' action.
             Route::post('/', 'store')->middleware($adminOnly);
         });
+
+        Route::controller(NotificationRuleController::class)
+            ->prefix('notification-rules')
+            ->middleware($adminOnly)
+            ->group(function () {
+                Route::get('/', 'index');
+                Route::get('/{notificationRule}', 'show');
+                Route::post('/', 'store');
+                Route::patch('/{notificationRule}', 'update');
+                Route::delete('/{notificationRule}', 'destroy');
+            });
 
         /*
         |----------------------------------------------------------------------
