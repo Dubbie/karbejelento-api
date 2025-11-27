@@ -38,6 +38,7 @@ class ReportResource extends JsonResource
             ],
             'status' => $this->whenLoaded('status', fn () => StatusResource::make($this->status)),
             'sub_status' => $this->whenLoaded('subStatus', fn () => SubStatusResource::make($this->subStatus)),
+            'duplicate_of_report_uuid' => $this->whenLoaded('duplicateOfReport', fn () => $this->duplicateOfReport?->uuid),
             'building' => $this->whenLoaded('building', fn () => BuildingResource::make($this->building)),
             'notifier' => $this->whenLoaded('notifier', fn () => NotifierResource::make($this->notifier)),
             'insurer' => $this->whenLoaded('insurer', fn () => InsurerResource::make($this->insurer)),

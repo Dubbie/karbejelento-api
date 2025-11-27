@@ -39,6 +39,8 @@ class ReportControllerTest extends TestCase
     private SubStatus $deficiencyWaitingSubStatus;
     private Status $closedStatus;
     private SubStatus $closedWithPaymentSubStatus;
+    private SubStatus $closedWithRejectionSubStatus;
+    private SubStatus $closedDuplicateSubStatus;
 
     /**
      * Set up the common actors for all tests.
@@ -280,6 +282,14 @@ class ReportControllerTest extends TestCase
                     'status_id' => $status->id,
                     'name' => ReportSubStatus::CLOSED_WITH_PAYMENT,
                 ]);
+                $this->closedWithRejectionSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::CLOSED_WITH_REJECTION,
+                ]);
+                $this->closedDuplicateSubStatus = SubStatus::factory()->create([
+                    'status_id' => $status->id,
+                    'name' => ReportSubStatus::CLOSED_DUPLICATE_REPORT,
+                ]);
             }
         }
     }
@@ -347,10 +357,29 @@ class ReportControllerTest extends TestCase
         $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
             'status' => $this->closedStatus->name,
             'sub_status' => $this->closedWithPaymentSubStatus->name,
+            'comment' => 'Closing after payout',
         ]);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['payload.closing_payments']);
+    }
+
+    public function test_closing_requires_comment_for_closed_statuses(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedWithRejectionSubStatus->name,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['comment']);
     }
 
     public function test_closing_with_payment_creates_payment_records(): void
@@ -408,6 +437,56 @@ class ReportControllerTest extends TestCase
             'amount' => 789.10,
             'currency' => 'EUR',
             'payment_time' => null,
+        ]);
+    }
+
+    public function test_closing_as_duplicate_requires_reference_report(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedDuplicateSubStatus->name,
+            'comment' => 'Duplicate claim',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['payload.duplicate_report_uuid']);
+    }
+
+    public function test_closing_as_duplicate_stores_reference_report(): void
+    {
+        $report = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+        $originalReport = Report::factory()->create([
+            'building_id' => $this->building->id,
+            'status_id' => $this->defaultStatus->id,
+        ]);
+
+        Sanctum::actingAs($this->manager);
+
+        $response = $this->postJson('/api/v1/reports/' . $report->uuid . '/status', [
+            'status' => $this->closedStatus->name,
+            'sub_status' => $this->closedDuplicateSubStatus->name,
+            'comment' => 'Duplicate claim',
+            'payload' => [
+                'duplicate_report_uuid' => $originalReport->uuid,
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('duplicate_of_report_uuid', $originalReport->uuid);
+
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'duplicate_report_id' => $originalReport->id,
         ]);
     }
 

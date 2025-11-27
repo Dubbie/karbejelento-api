@@ -54,6 +54,8 @@ class ReportStatusTransitionService
             }
         }
 
+        $this->assertClosingHasComment($targetStatus, $payload);
+
         foreach ($this->rules as $rule) {
             if ($rule->supports($report, $targetStatus, $subStatus)) {
                 return $rule->handle($report, $targetStatus, $subStatus, $actor, $payload);
@@ -64,6 +66,21 @@ class ReportStatusTransitionService
             'user_id' => $actor->id,
             'comment' => $payload['comment'] ?? null,
         ]);
+    }
+
+    private function assertClosingHasComment(Status $targetStatus, array $payload): void
+    {
+        if ($targetStatus->name !== ReportStatus::CLOSED) {
+            return;
+        }
+
+        $comment = trim((string) ($payload['comment'] ?? ''));
+
+        if ($comment === '') {
+            throw ValidationException::withMessages([
+                'comment' => ['A comment is required when closing a report.'],
+            ]);
+        }
     }
 
     private function currentStateAllowsRepeat(?Status $currentStatus, ?SubStatus $currentSubStatus): bool

@@ -51,6 +51,7 @@ class ReportController extends Controller
         'documentRequests.items.files',
         'closingPayments.createdBy',
         'insurer',
+        'duplicateOfReport',
     ];
 
     protected function loadFullReport(Report $report): Report
