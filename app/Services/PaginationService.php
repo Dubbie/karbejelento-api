@@ -10,7 +10,7 @@ class PaginationService
     /**
      * The main method to paginate a query.
      */
-    public static function paginate(Builder $query, Request $request, array $options): array
+    public static function paginate(Builder $query, Request $request, array $options): PaginatedResult
     {
         // 1. Apply Filtering
         self::applyFiltering($query, $request, $options['filterableFields'] ?? []);
@@ -28,16 +28,7 @@ class PaginationService
         $results = $query->forPage($page, $limit)->get();
 
         // 5. Format the final result
-        return [
-            'data' => $results,
-            'meta' => [
-                'totalItems' => $totalItems,
-                'itemCount' => $results->count(),
-                'itemsPerPage' => $limit,
-                'totalPages' => ceil($totalItems / $limit),
-                'currentPage' => $page,
-            ],
-        ];
+        return PaginatedResult::fromMetrics($results, $totalItems, $limit, $page);
     }
 
     private static function applySorting(Builder $query, Request $request, array $sortableFields): void

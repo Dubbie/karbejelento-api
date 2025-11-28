@@ -24,6 +24,8 @@ class UserController extends Controller
      * User Profile
      *
      * Display the authenticated user's profile.
+     *
+     * @response \App\Http\Resources\UserResource
      */
     public function getProfile(Request $request)
     {
@@ -35,6 +37,17 @@ class UserController extends Controller
      * List Users
      *
      * Display a listing of the resource.
+     *
+     * @response array{
+     *     data: array<\App\Http\Resources\UserResource>,
+     *     meta: array{
+     *         totalItems: int,
+     *         itemCount: int,
+     *         itemsPerPage: int,
+     *         totalPages: int,
+     *         currentPage: int
+     *     }
+     * }
      */
     public function index(Request $request)
     {
@@ -47,6 +60,8 @@ class UserController extends Controller
      * Create User
      *
      * Store a newly created user.
+     *
+     * @response 201 \App\Http\Resources\UserResource
      */
     public function store(StoreUserRequest $request)
     {
@@ -59,6 +74,8 @@ class UserController extends Controller
      * Show User
      *
      * Display the specified user.
+     *
+     * @response \App\Http\Resources\UserResource
      */
     public function show(User $user)
     {
@@ -69,6 +86,8 @@ class UserController extends Controller
      * Update User
      *
      * Update the specified user in storage.
+     *
+     * @response \App\Http\Resources\UserResource
      */
     public function update(UpdateUserRequest $request, User $user)
     {
@@ -80,6 +99,8 @@ class UserController extends Controller
      * Delete User
      *
      * Remove the specified user from storage.
+     *
+     * @response 204 []
      */
     public function destroy(User $user): Response
     {

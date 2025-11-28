@@ -22,6 +22,13 @@ class DocumentRequestPublicController extends Controller
 {
     public function __construct(private ReportService $reportService) {}
 
+    /**
+     * Show Document Request
+     *
+     * Display a document request with its outstanding items via the public token.
+     *
+     * @response \App\Http\Resources\DocumentRequestResource
+     */
     public function show(DocumentRequest $documentRequest, Request $request)
     {
         $this->ensureValidToken($documentRequest, $request->query('token'));
@@ -31,6 +38,13 @@ class DocumentRequestPublicController extends Controller
         return DocumentRequestResource::make($documentRequest);
     }
 
+    /**
+     * Upload Item Files
+     *
+     * Persist one or more files for a public document request item.
+     *
+     * @response (\App\Http\Resources\DocumentRequestItemFileResource|array<\App\Http\Resources\DocumentRequestItemFileResource>)
+     */
     public function storeItemFile(
         StoreDocumentRequestItemFileRequest $request,
         DocumentRequest $documentRequest,
@@ -94,7 +108,7 @@ class DocumentRequestPublicController extends Controller
 
         $documentRequest->loadMissing('items.files');
 
-        $allFulfilled = $documentRequest->items->every(fn ($item) => $item->files->isNotEmpty());
+        $allFulfilled = $documentRequest->items->every(fn($item) => $item->files->isNotEmpty());
 
         if ($allFulfilled) {
             DB::transaction(function () use ($documentRequest) {

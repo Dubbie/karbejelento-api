@@ -17,6 +17,8 @@ class ReportClosingPaymentController extends Controller
      * List Closing Payments
      *
      * Return all closing payments for a specific report.
+     *
+     * @response array<\App\Http\Resources\ReportClosingPaymentResource>
      */
     public function index(Report $report)
     {
@@ -41,6 +43,10 @@ class ReportClosingPaymentController extends Controller
 
         $payment->load('createdBy');
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\ReportClosingPaymentResource
+         */
         return ReportClosingPaymentResource::make($payment)
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -50,6 +56,8 @@ class ReportClosingPaymentController extends Controller
      * Update Closing Payment
      *
      * Modify a closing payment belonging to the given report.
+     *
+     * @response \App\Http\Resources\ReportClosingPaymentResource
      */
     public function update(
         UpdateReportClosingPaymentRequest $request,

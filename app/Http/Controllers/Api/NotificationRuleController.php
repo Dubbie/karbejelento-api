@@ -20,6 +20,8 @@ class NotificationRuleController extends Controller
      * List Notification Rules
      *
      * Return all configured notification rules with their recipients and filters.
+     *
+     * @response array<\App\Http\Resources\NotificationRuleResource>
      */
     public function index()
     {
@@ -61,6 +63,10 @@ class NotificationRuleController extends Controller
             return $rule->fresh(['recipients', 'status', 'subStatus']);
         });
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\NotificationRuleResource
+         */
         return NotificationRuleResource::make($rule)
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -70,6 +76,8 @@ class NotificationRuleController extends Controller
      * Show Notification Rule
      *
      * Display a single rule with recipient definitions and filters.
+     *
+     * @response \App\Http\Resources\NotificationRuleResource
      */
     public function show(NotificationRule $notificationRule)
     {
@@ -82,6 +90,8 @@ class NotificationRuleController extends Controller
      * Update Notification Rule
      *
      * Modify an existing notification rule and optionally replace recipients.
+     *
+     * @response \App\Http\Resources\NotificationRuleResource
      */
     public function update(UpdateNotificationRuleRequest $request, NotificationRule $notificationRule)
     {

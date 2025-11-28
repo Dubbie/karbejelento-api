@@ -11,7 +11,7 @@ class InsurerService
     /**
      * Retrieve paginated insurers with filtering support.
      */
-    public function getAllInsurers(Request $request): array
+    public function getAllInsurers(Request $request): PaginatedResult
     {
         return Insurer::query()->advancedPaginate($request, [
             'sortableFields' => ['name', 'created_at'],

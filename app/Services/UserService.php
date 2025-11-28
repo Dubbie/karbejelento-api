@@ -13,7 +13,7 @@ class UserService
      * Fetch a paginated list of users.
      * Corresponds to `findAll`.
      */
-    public function getAllUsers(Request $request): array
+    public function getAllUsers(Request $request): PaginatedResult
     {
         // Define which fields can be sorted and filtered for the User model
         $options = [

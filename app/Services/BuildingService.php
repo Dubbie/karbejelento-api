@@ -53,7 +53,7 @@ class BuildingService
     /**
      * Finds all buildings based on the user's role and query parameters.
      */
-    public function getAllBuildings(User $user, Request $request): array
+    public function getAllBuildings(User $user, Request $request): PaginatedResult
     {
         $query = Building::forUser($user)
             ->with('insurer');

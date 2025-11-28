@@ -17,6 +17,19 @@ class InsurerController extends Controller
 
     /**
      * List insurers.
+     *
+     * Retrieve paginated insurers.
+     *
+     * @response array{
+     *     data: array<\App\Http\Resources\InsurerResource>,
+     *     meta: array{
+     *         totalItems: int,
+     *         itemCount: int,
+     *         itemsPerPage: int,
+     *         totalPages: int,
+     *         currentPage: int
+     *     }
+     * }
      */
     public function index(Request $request)
     {
@@ -27,16 +40,26 @@ class InsurerController extends Controller
 
     /**
      * Create insurer.
+     *
+     * Persist a new insurer record.
      */
     public function store(StoreInsurerRequest $request)
     {
         $insurer = $this->insurerService->createInsurer($request->validated());
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\InsurerResource
+         */
         return InsurerResource::make($insurer)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
      * Show insurer.
+     *
+     * Display a single insurer.
+     *
+     * @response \App\Http\Resources\InsurerResource
      */
     public function show(Insurer $insurer)
     {
@@ -45,6 +68,10 @@ class InsurerController extends Controller
 
     /**
      * Update insurer.
+     *
+     * Modify the provided insurer with validated data.
+     *
+     * @response \App\Http\Resources\InsurerResource
      */
     public function update(UpdateInsurerRequest $request, Insurer $insurer)
     {
@@ -55,6 +82,8 @@ class InsurerController extends Controller
 
     /**
      * Delete insurer.
+     *
+     * Remove the specified insurer permanently.
      */
     public function destroy(Insurer $insurer): Response
     {
