@@ -9,9 +9,13 @@ use App\Services\ReportStatusTransitions\Rules\CloseReportAsDuplicateRule;
 use App\Services\ReportStatusTransitions\Rules\CloseReportWithPaymentRule;
 use App\Services\ReportStatusTransitions\Rules\RequireDamageIdForUnderAdministrationRule;
 use App\Services\ReportStatusTransitions\Rules\SendDocumentRequestEmailRule;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,5 +53,17 @@ class AppServiceProvider extends ServiceProvider
         });
 
         JsonResource::withoutWrapping();
+
+        // Set up Scramble for authenticated routes
+        Scramble::afterOpenApiGenerated(function (OpenApi $openApi) {
+            $openApi->secure(
+                SecurityScheme::http('Bearer')
+            );
+        });
+
+        // Set up Gate for public api docs
+        Gate::define('viewApiDocs', function () {
+            return true;
+        });
     }
 }

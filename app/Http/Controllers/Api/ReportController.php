@@ -63,6 +63,17 @@ class ReportController extends Controller
      * List Reports
      *
      * Return a paginated list of reports visible to the current user.
+     *
+     * @response array{
+     *     data: array<\App\Http\Resources\ReportResource>,
+     *     meta: array{
+     *         totalItems: int,
+     *         itemCount: int,
+     *         itemsPerPage: int,
+     *         totalPages: int,
+     *         currentPage: int
+     *     }
+     * }
      */
     public function index(Request $request)
     {
@@ -81,6 +92,10 @@ class ReportController extends Controller
         $report = $this->reportService->createReport($request->validated(), $request->user());
         $report = $this->loadFullReport($report);
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\ReportResource
+         */
         return ReportResource::make($report)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -88,6 +103,8 @@ class ReportController extends Controller
      * Show Report
      *
      * Display a single report with detailed related data.
+     *
+     * @response \App\Http\Resources\ReportResource
      */
     public function show(Report $report)
     {
@@ -98,6 +115,8 @@ class ReportController extends Controller
      * Update Report
      *
      * Update mutable report attributes (excluding status).
+     *
+     * @response \App\Http\Resources\ReportResource
      */
     public function update(UpdateReportRequest $request, Report $report)
     {
@@ -109,6 +128,8 @@ class ReportController extends Controller
      * Change Status
      *
      * Transition a report to a new status based on workflow rules.
+     *
+     * @response \App\Http\Resources\ReportResource
      */
     public function changeStatus(ChangeStatusRequest $request, Report $report)
     {
@@ -166,6 +187,10 @@ class ReportController extends Controller
 
         $attachments->load('uploadedBy');
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\ReportAttachmentResource
+         */
         return ReportAttachmentResource::collection($attachments)
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -175,6 +200,8 @@ class ReportController extends Controller
      * Update Damage ID
      *
      * Update the insurer-provided damage identifier without changing status.
+     *
+     * @response \App\Http\Resources\ReportResource
      */
     public function updateDamageId(UpdateDamageIdRequest $request, Report $report)
     {

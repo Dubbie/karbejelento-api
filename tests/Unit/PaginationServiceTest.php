@@ -24,8 +24,8 @@ class PaginationServiceTest extends TestCase
             'filterableFields' => ['name']
         ]);
 
-        $this->assertEquals(1, $result['meta']['totalItems']);
-        $this->assertEquals('Jane Doe', $result['data'][0]->name);
+        $this->assertEquals(1, $result->meta()->totalItems());
+        $this->assertEquals('Jane Doe', $result->data()[0]->name);
     }
 
     public function test_it_can_filter_by_in_operator(): void
@@ -41,7 +41,7 @@ class PaginationServiceTest extends TestCase
             'filterableFields' => ['role']
         ]);
 
-        $this->assertEquals(2, $result['meta']['totalItems']);
+        $this->assertEquals(2, $result->meta()->totalItems());
     }
 
     public function test_it_ignores_invalid_sort_fields(): void
@@ -58,6 +58,6 @@ class PaginationServiceTest extends TestCase
 
         // It should fall back to the default sort (created_at desc), but for this test,
         // we can just assert that it DID NOT sort by name asc.
-        $this->assertEquals('Zebra', $result['data'][0]->name);
+        $this->assertEquals('Zebra', $result->data()[0]->name);
     }
 }

@@ -33,6 +33,17 @@ class BuildingController extends Controller
      * List Buildings
      *
      * Retrieve paginated buildings visible to the authenticated user.
+     *
+     * @response array{
+     *     data: array<\App\Http\Resources\BuildingResource>,
+     *     meta: array{
+     *         totalItems: int,
+     *         itemCount: int,
+     *         itemsPerPage: int,
+     *         totalPages: int,
+     *         currentPage: int
+     *     }
+     * }
      */
     public function index(Request $request): array
     {
@@ -52,6 +63,10 @@ class BuildingController extends Controller
         $building = $this->buildingService->createBuilding($request->validated());
         $building->load('insurer', 'managementHistory.customer', 'managementHistory.insurer');
 
+        /**
+         * @status 201
+         * @body \App\Http\Resources\BuildingResource
+         */
         return BuildingResource::make($building)->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -59,6 +74,8 @@ class BuildingController extends Controller
      * Show Building
      *
      * Display a single building with related management information.
+     *
+     * @response \App\Http\Resources\BuildingResource
      */
     public function show(Building $building)
     {
@@ -69,6 +86,8 @@ class BuildingController extends Controller
      * Update Building
      *
      * Modify the provided building with validated data.
+     *
+     * @response \App\Http\Resources\BuildingResource
      */
     public function update(UpdateBuildingRequest $request, Building $building)
     {
@@ -91,6 +110,8 @@ class BuildingController extends Controller
      * List Notifiers
      *
      * Retrieve notifiers available for the given building.
+     *
+     * @response array<\App\Http\Resources\NotifierResource>
      */
     public function notifiers(Building $building)
     {
@@ -102,6 +123,8 @@ class BuildingController extends Controller
      * Download Import Template
      *
      * Generate and return a template file for importing buildings.
+     *
+     * @response \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function generateImportTemplate(): BinaryFileResponse
     {
@@ -112,6 +135,8 @@ class BuildingController extends Controller
      * Import Buildings
      *
      * Accept a spreadsheet file to import new buildings for a customer.
+     *
+     * @response \App\Http\Resources\BuildingImportResource
      */
     public function import(ImportBuildingsRequest $request): JsonResponse
     {
@@ -130,6 +155,17 @@ class BuildingController extends Controller
      * Building Reports
      *
      * Fetch reports that belong to a specific building.
+     *
+     * @response array{
+     *     data: array<\App\Http\Resources\ReportResource>,
+     *     meta: array{
+     *         totalItems: int,
+     *         itemCount: int,
+     *         itemsPerPage: int,
+     *         totalPages: int,
+     *         currentPage: int
+     *     }
+     * }
      */
     public function reports(Request $request, Building $building)
     {

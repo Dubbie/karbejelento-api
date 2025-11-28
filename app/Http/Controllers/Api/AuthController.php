@@ -14,6 +14,9 @@ class AuthController extends Controller
      * Login
      *
      * Authenticate the user and issue a Sanctum access token.
+     *
+     * @response array{access_token: string}
+     * @unauthenticated
      */
     public function login(Request $request)
     {

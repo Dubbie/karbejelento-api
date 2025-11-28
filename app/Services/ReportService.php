@@ -72,7 +72,7 @@ class ReportService
         return $report;
     }
 
-    public function getAllReportsForUser(User $user, Request $request): array
+    public function getAllReportsForUser(User $user, Request $request): PaginatedResult
     {
         $query = Report::forUser($user)
             ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer', 'duplicateOfReport']); // Eager load relationships
@@ -99,7 +99,7 @@ class ReportService
         ]);
     }
 
-    public function getAllReportsForBuilding(Building $building, Request $request): array
+    public function getAllReportsForBuilding(Building $building, Request $request): PaginatedResult
     {
         $query = Report::forBuilding($building)
             ->with(['building.insurer', 'notifier', 'status', 'subStatus', 'insurer', 'duplicateOfReport']); // Eager load relationships
